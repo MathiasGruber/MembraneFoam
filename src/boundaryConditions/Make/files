@@ -1,0 +1,6 @@
+RO_BC/explicitROmembraneVelocity/explicitROmembraneVelocityFvPatchVectorField.C
+RO_BC/explicitROmembraneSolute/explicitROmembraneSoluteFvPatchScalarField.C
+FO_BC/explicitFOmembraneSolute/explicitFOmembraneSoluteFvPatchScalarField.C
+FO_BC/explicitFOmembraneVelocity/explicitFOmembraneVelocityFvPatchVectorField.C
+
+LIB = $(FOAM_USER_LIBBIN)/libDHIBoundaryConditions
