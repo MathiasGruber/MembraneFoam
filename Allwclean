@@ -2,8 +2,7 @@
 cd ${0%/*} || exit 1    # run from this directory
 set -x
 
-wclean libso src/boundaryConditions/FO_BC
-wclean libso src/boundaryConditions/RO_BC
+wclean libso src/boundaryConditions
 
 wclean src/solvers/pisoSaltTransport
 wclean src/solvers/potentialSalt

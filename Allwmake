@@ -7,6 +7,9 @@ wmake libso src/boundaryConditions
 wmake src/solvers/pisoSaltTransport
 wmake src/solvers/potentialSalt
 wmake src/solvers/simpleSaltTransport
+wmake src/solvers/simplePorousSaltTransport
+
+wmake src/porosityModels
 
 wmake src/utilities/sampleMembrane
 

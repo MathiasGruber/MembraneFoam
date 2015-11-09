@@ -1,0 +1,3 @@
+simplePorousSaltTransport.C
+
+EXE = $(FOAM_APPBIN)/simplePorousSaltTransport
