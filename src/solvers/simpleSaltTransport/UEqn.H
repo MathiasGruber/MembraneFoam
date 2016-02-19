@@ -1,7 +1,7 @@
     volScalarField mu
     (
         "mu",
-        mu0 + mu_mACoeff*m_A
+        mu0 * (1 + mu_mACoeff * m_A)
     );
 
     tmp<fvVectorMatrix> UEqn

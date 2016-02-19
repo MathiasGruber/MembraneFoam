@@ -11,7 +11,9 @@
     UEqn().relax();
 
     // Update the mu_laplacian field
-    mu_laplacianU = fvc::laplacian( mu, U );
+    // http://www.cfd-online.com/Forums/openfoam-solving/58214-calculating-divdevreff.html
+    // mu_laplacianU = fvc::laplacian( mu, U );
+    mu_laplacianU = fvc::laplacian( mu, U ) + fvc::div(mu*dev2(fvc::grad(U)().T()));
 
     // Include the porous media resistance and solve the momentum equation
     // either implicit in the tensorial resistance or transport using by
@@ -44,7 +46,6 @@
         fvOptions.constrain(UEqn());
         solve(UEqn() == -fvc::grad(p));
         fvOptions.correct(U);
-
         trAU = 1.0/UEqn().A();
         trAU().rename("rAU");
     }
