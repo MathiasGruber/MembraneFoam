@@ -12,5 +12,11 @@ const bool momentumPredictor =
 const bool transonic =
     pisoDict.lookupOrDefault("transonic", false);
 
-// Get the time controls
-#include "readTimeControls.H"
+// Pre-OF3: #include "readTimeControls.H"
+// Now directly in this file:
+
+// Maximum flow Courant number
+scalar maxCo(readScalar(pimple.dict().lookup("maxCo")));
+
+// Maximum time scale
+scalar maxDeltaT(pimple.dict().lookupOrDefault<scalar>("maxDeltaT", GREAT));
