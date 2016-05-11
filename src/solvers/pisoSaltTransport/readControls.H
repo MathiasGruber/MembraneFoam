@@ -15,8 +15,11 @@ const bool transonic =
 // Pre-OF3: #include "readTimeControls.H"
 // Now directly in this file:
 
-// Maximum flow Courant number
-scalar maxCo(readScalar(pimple.dict().lookup("maxCo")));
+const bool adjustTimeStep =
+    runTime.controlDict().lookupOrDefault("adjustTimeStep", false);
 
-// Maximum time scale
-scalar maxDeltaT(pimple.dict().lookupOrDefault<scalar>("maxDeltaT", GREAT));
+scalar maxCo =
+    runTime.controlDict().lookupOrDefault<scalar>("maxCo", 1.0);
+
+scalar maxDeltaT =
+    runTime.controlDict().lookupOrDefault<scalar>("maxDeltaT", GREAT);
