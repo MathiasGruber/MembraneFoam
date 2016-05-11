@@ -8,10 +8,14 @@ wmake src/solvers/pisoSaltTransport
 wmake src/solvers/potentialSalt
 wmake src/solvers/simpleSaltTransport
 wmake src/solvers/simpleSaltDiffusion
-wmake src/solvers/simplePorousSaltTransport
 
-wmake src/porosityModels
+# Experimental work
+# wmake src/solvers/simplePorousSaltTransport
 
-wmake src/utilities/sampleMembrane
+# Experimental work
+# wmake src/porosityModels
+
+# Temporary utility used for experimental project
+# wmake src/utilities/sampleMembrane
 
 # ----------------------------------------------------------------- end-of-file
