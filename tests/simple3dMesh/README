@@ -1,0 +1,17 @@
+Quick Quide 
+===========
+
+This test case might not work out-of-the-box on all systems, but should 
+give a general idea of how to set up a simulation.
+
+First run ./setup to setup the case appropriately.
+
+Subsequently, load Openfoam, e.g. depending on system:
+module load OpenFoam/3.0.1/gcc-5.1.0-openmpi 
+
+Then run the following solver to get a good initial p field
+potentialSalt
+
+And then a solver to compute the membrane transport (here steady state):
+simpleSaltTransport
+
