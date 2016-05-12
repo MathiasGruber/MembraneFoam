@@ -12,4 +12,5 @@ EXE_LIBS = \
     -lfiniteVolume \
     -lsampling \
     -lmeshTools \
-    -lfvOptions
+    -lfvOptions \
+    -lxml2
