@@ -12,6 +12,6 @@ wmake src/solvers/simplePorousSaltTransport
 
 wmake src/porosityModels
 
-wmake src/utilities/sampleMembrane
+
 
 # ----------------------------------------------------------------- end-of-file
