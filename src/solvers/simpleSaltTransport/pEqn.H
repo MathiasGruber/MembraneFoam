@@ -19,14 +19,14 @@
         << min(U).value() << endl;
 
     // Calculate rAU
-    volScalarField rAU(1.0/UEqn().A());
+    volScalarField rAU(1.0/UEqn.A());
     
     // Interpolate rAU to faces
     tmp<surfaceScalarField> temp1 = fvc::interpolate(rAU);
     surfaceScalarField rAUf = temp1();
     
     // Calculate phiU
-    U = rAU*UEqn().H();
+    U = rAU*UEqn.H();
     surfaceScalarField phiU
     (
         "phiU",
