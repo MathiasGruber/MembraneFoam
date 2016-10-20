@@ -1,0 +1,66 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.7.0                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}
+/*
+ *  Discretization schemes used
+*/ 
+
+ddtSchemes
+{
+    default         Euler;
+}
+
+gradSchemes
+{
+    default         Gauss linear;
+    grad(p_rgh)     Gauss linear;
+    grad(U)         Gauss linear;
+}
+
+divSchemes
+{
+    default                         none;
+    div(phi,m_A)                    Gauss limitedLinear 1;
+    div(phi,U)                      Gauss linear;
+    div((mu*dev2(grad(U).T())))     Gauss linear;
+    div((nuEff*dev(T(grad(U)))))    Gauss linear;
+}
+
+laplacianSchemes
+{
+    default                                 Gauss linear corrected;
+    laplacian(rho*D_AB,m_A)         		Gauss linear corrected;
+    laplacian(mu,U)				     Gauss linear corrected;
+    laplacian((rho*(1|A(U))),p)		     Gauss linear corrected;
+    laplacian(1,p)                          Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default         linear;
+    interpolate(U)  linear;
+}
+
+snGradSchemes
+{
+    default         corrected;
+}
+
+fluxRequired
+{
+    default		no;
+    p			yes;
+}
+

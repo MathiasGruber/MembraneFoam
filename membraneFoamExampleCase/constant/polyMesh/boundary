@@ -1,0 +1,92 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  3.0.1                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       polyBoundaryMesh;
+    location    "constant/polyMesh";
+    object      boundary;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+10
+(
+    Wall
+    {
+        type            wall;
+        inGroups        1(wall);
+        nFaces          370;
+        startFace       86990;
+    }
+    OutletFeed
+    {
+        type            wall;
+        inGroups        1(wall);
+        nFaces          111;
+        startFace       87360;
+    }
+    InletFeed
+    {
+        type            wall;
+        inGroups        1(wall);
+        nFaces          125;
+        startFace       87471;
+    }
+    PB1
+    {
+        type            wall;
+        inGroups        1(wall);
+        nFaces          1247;
+        startFace       87596;
+    }
+    PB2
+    {
+        type            wall;
+        inGroups        1(wall);
+        nFaces          1247;
+        startFace       88843;
+    }
+    InletDraw
+    {
+        type            wall;
+        inGroups        1(wall);
+        nFaces          196;
+        startFace       90090;
+    }
+    Inside
+    {
+        type            wall;
+        inGroups        1(wall);
+        nFaces          0;
+        startFace       90286;
+    }
+    OutletDraw
+    {
+        type            wall;
+        inGroups        1(wall);
+        nFaces          197;
+        startFace       90286;
+    }
+    Inside_2
+    {
+        type            wall;
+        inGroups        1(wall);
+        nFaces          0;
+        startFace       90483;
+    }
+    Membrane
+    {
+        type            patch;
+        inGroups        1(baffleFaces);
+        nFaces          5482;
+        startFace       90483;
+    }
+)
+
+// ************************************************************************* //

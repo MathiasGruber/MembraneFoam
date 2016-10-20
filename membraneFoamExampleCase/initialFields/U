@@ -1,0 +1,86 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2.3.0                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    InletDraw
+    {
+        type            surfaceNormalFixedValue;
+        // refValue        uniform 0;
+        refValue        uniform -0.00001;
+    }
+    OutletDraw
+    {
+        type            zeroGradient;
+    }
+    OutletFeed
+    {
+        type            zeroGradient;
+    }
+    InletFeed
+    {
+        type            surfaceNormalFixedValue;
+        // refValue        uniform 0;
+        refValue        uniform -0.00001;
+    }
+    Wall
+    {
+        type            fixedValue;
+        value           uniform (0 0 0);
+    }
+    Inside
+    {
+        type            fixedValue;
+        value           uniform (0 0 0);
+    }
+    Inside_2
+    {
+        type            fixedValue;
+        value           uniform (0 0 0);
+    }
+    PB1
+    {
+        type            fixedValue;
+        value           uniform (0 0 0);
+    }
+    PB2
+    {
+        type            fixedValue;
+        value           uniform (0 0 0);
+    }
+    Membrane
+    {
+        type            explicitFOmembraneVelocity;
+        A               1.61111e-12;
+        B               8.33333e-08;
+        K               150666;
+        alpha           1;
+        eq              advanced;
+        aRelax          1;
+        forwardDirection (0 1 0);
+        slip            noSlip;
+        pi_mACoeff      8.051e+07;
+        value           uniform (0 0 0);
+    }
+}
+
+
+// ************************************************************************* //

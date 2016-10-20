@@ -1,0 +1,42 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  3.0.1                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     pisoSaltTransport;
+
+startFrom       startTime;
+startTime       0;
+stopAt          endTime;
+endTime         300;
+deltaT          1;
+maxDeltaT	    0.5;
+maxCo		    0.70;
+
+writeControl    timeStep;
+writeInterval   50;
+purgeWrite      3;
+writeFormat     ascii;
+writePrecision  6;
+writeCompression off;
+
+timeFormat      general;
+timePrecision   8;
+runTimeModifiable false;
+adjustTimeStep	no;
+
+libs ( "libOpenFOAM.so" "libDHIBoundaryConditions.so");
+
+// ************************************************************************* //
