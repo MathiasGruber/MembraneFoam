@@ -1,0 +1,16 @@
+copy/pasting these lines sets the membraneFoam package up and runs the example case.
+
+mkdir $WM_PROJECT_USER_DIR/src
+cd $WM_PROJECT_USER_DIR/src
+git clone git://github.com/MathiasGruber/MembraneFoam.git
+cd MembraneFoam
+git checkout OF4
+./Allwmake
+cp -r $WM_PROJECT_USER_DIR/src/MembraneFoam/membraneFoamExampleCase $FOAM_RUN
+cd $FOAM_RUN/membraneFoamExampleCase
+mkdir 0
+cp initialFields/* 0/
+setFields
+potentialSalt
+simpleSaltTransport
+
