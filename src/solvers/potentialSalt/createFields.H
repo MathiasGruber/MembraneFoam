@@ -1,3 +1,17 @@
+    Info<< "Reading field m_A\n" << endl;
+    volScalarField m_A
+    (
+        IOobject
+        (
+            "m_A",
+            runTime.timeName(),
+            mesh,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh
+    );
+
     Info<< "Reading field p\n" << endl;
     volScalarField p
     (
@@ -30,20 +44,6 @@
     );
 
     U = dimensionedVector("0", U.dimensions(), vector::zero);
-
-    Info<< "Reading field m_A\n" << endl;
-    volScalarField m_A
-    (
-        IOobject
-        (
-            "m_A",
-            runTime.timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        ),
-        mesh
-    );
 
     surfaceScalarField phi
     (
