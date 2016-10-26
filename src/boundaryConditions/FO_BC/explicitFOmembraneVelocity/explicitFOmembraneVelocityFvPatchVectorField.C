@@ -381,7 +381,7 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::calcFaceMapping()
     const vectorField& cfvf = patch().Cf();
     forAll(cfvf, facei)
     {
-        for(label i=0; i<cfvf.size(); i++)
+        forAll(cfvf, i)
         {
             if (facei!=i)
             {
