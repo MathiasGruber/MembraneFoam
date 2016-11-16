@@ -34,15 +34,12 @@ Description
     {
         type 			explicitFOmembraneVelocity;
         value			uniform (0 0 0);
-        forwardDirection	( 0 -1 0 );	// vector defining "forward"
-										// direction of membrane. If
-										// missing the concentration
-										// of the "m_A" field is used
+        forwardDirection	( 0 -1 0 );	// vector defining "forward" direction of membrane. Concentration Gradient is used if vector is set (0 0 0).
         A			value
         K			value
         B			value		// Solute permeation coefficient, only used in advanced flux equation
         eq      	"simple"	// Simple applies to high R-values. Otherwise use
-								// "advanced" and specify B
+								// "advanced" or "advancedPresDiff", for a non-zero hydraulic pressure difference, and specify B
         m_A			m_A;		// field of solute concentration as a mass fraction.
 								// Defaults to "m_A". Using "none" causes boundary 
 								// condition to ignore osmotic pressure
@@ -323,10 +320,14 @@ private:
         //- Flux equation
         Foam::scalar fluxEquation( const scalar&, 
                              const scalar&, 
+                             const scalar&, 
+                             const scalar&, 
                              const scalar& );
 
         //- Root finder used by flux calculation
         Foam::scalar ridderSolve( const scalar&,
+                            const scalar&,
+                            const scalar&,
                             const scalar&,
                             const scalar&,
                             const scalar&,

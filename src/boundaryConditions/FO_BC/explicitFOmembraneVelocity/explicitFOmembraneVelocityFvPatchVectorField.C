@@ -243,11 +243,13 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
         }
         else
         {
-            scalar maxBound      = 1e-1;                 // Max flux
-            scalar minBound      = 0;                    // Min flux
+            scalar maxBound      = 1e-3;                 // Max flux, advancedPesDiff can't cope with higher fluxes!
+            scalar minBound      = 1e-10;                // Min flux 1e-10
             scalar xacc          = 1e-10;                // Accuracy for ridder' method
-            scalar feedMem       = 0;                    // Variable for feed membrane m_A
-            scalar drawMem       = 0;                    // Variable for draw membrane m_A
+            scalar feedMemSol       = 0;                 // Variable for feed membrane m_A
+            scalar drawMemSol       = 0;                 // Variable for draw membrane m_A
+            scalar feedMemPres       = 0;                // Variable for feed membrane pressure
+            scalar drawMemPres       = 0;                // Variable for draw membrane pressure
             scalar i             = 0;                    // Total iterations counter
             scalar totalMassFlux = 0;                    // Total flux through membrane
             
@@ -260,6 +262,9 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
             // Get the mass fraction field
             const fvPatchScalarField& m_A = patch().lookupPatchField<volScalarField, scalar>(m_AName_);
             const scalarField& magSf = patch().magSf();
+
+            // Get the pressure field
+	    	const fvPatchField<scalar>& p = patch().lookupPatchField<volScalarField, scalar>(pName_);
             
             // Get the current internal velocity field
             const fvPatchVectorField& Ufield = patch().lookupPatchField<volVectorField, vector>("U");
@@ -277,11 +282,13 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
             {
                 label fsi = fs_[facei];
                 label dsi = fm_[fsi];
-                feedMem = m_A[fsi];
-                drawMem = m_A[dsi];
+                feedMemSol = m_A[fsi];
+                drawMemSol = m_A[dsi];
+                feedMemPres = p[fsi];
+                drawMemPres = p[dsi];
 
                 // User ridder's method to solve for the flux. Save flux in rtn.
-                scalar flux = ridderSolve(feedMem, drawMem, minBound, maxBound, xacc, i); 
+                scalar flux = ridderSolve(feedMemSol, drawMemSol, feedMemPres, drawMemPres, minBound, maxBound, xacc, i); 
                 
                 // Calculate the velocity for the assymetric membrane
                 vector v = vfnf[fsi] * flux;
@@ -290,10 +297,10 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
                 operator[](fsi) = v;
 
                 // Correct the velocity due to density change
-                v *= (1.0 + rho_mACoeff_.value() * feedMem) / (1.0 + rho_mACoeff_.value() * drawMem);
+                v *= (1.0 + rho_mACoeff_.value() * feedMemSol) / (1.0 + rho_mACoeff_.value() * drawMemSol);
 
                 // Total flux and area
-                totalMassFlux += flux * rho0_.value()*(1.0 + rho_mACoeff_.value() * feedMem) * magSf[dsi];
+                totalMassFlux += flux * rho0_.value()*(1.0 + rho_mACoeff_.value() * feedMemSol) * magSf[dsi];
 
 				// Slip boundary condition
 				if( slipName() == "slip" ){
@@ -315,7 +322,7 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
          
             Info << patch().name() << ": " << "Ridders' Method - Total iterations = " << i
                  << "\n    Water flux, " << fluxEqName_ << ": " << totalMassFlux/(sum(magSf)/2) * 3600 << " kg/(h*m2)" 
-                 << "\n    Draw/Feed m_A estimate: " << drawMem << " / " << feedMem 
+                 << "\n    Draw/Feed m_A estimate: " << drawMemSol << " / " << feedMemSol 
                  << "\n    Max Slip Velocity: " << maxSlip << " with slip Coeff: " << alpha() << " and under-relax factor: " << aRelax_
                  << "\n    A: " << A_ << " / B: " << B_ << " / K: " << K_
                  << endl;
@@ -402,7 +409,9 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::calcFaceMapping()
 
 Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( const scalar& Jvalue, 
                                                                          const scalar& feedm_A, 
-                                                                         const scalar& drawm_A )
+                                                                         const scalar& drawm_A,
+                                                                         const scalar& feedP,
+                                                                         const scalar& drawP )
 {
 
     if( fluxEqName_ == "simple" || B() < SMALL )
@@ -422,8 +431,6 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
              behaviors of forward osmosis membranes during humic acid filtration"
         Journal of Membrane Science 354 (2010) 123-133
         */
-        // Info << A()*pi_mACoeff().value()*drawm_A << " vs. " << B() << endl;
-        // Info << A()*pi_mACoeff().value()*feedm_A << " and " << Jvalue << " vs. " << B() << endl;
         scalar numerator    = A()*pi_mACoeff().value()*drawm_A + B();
         scalar denominator  = A()*pi_mACoeff().value()*feedm_A + Jvalue + B();
         
@@ -435,19 +442,41 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
             return 0;
         }
     }
+    else if( fluxEqName_ == "advancedPresDiff" )
+    {
+        /*- Implicit flux equation
+        Like "advanced" flux equation but assuming a non-zero hydraulic pressure difference across the membrane.
+        */
+
+        scalar numerator, denominator;
+        scalar dP = drawP - feedP;
+
+        numerator = pi_mACoeff().value()*feedm_A * Jvalue * ( drawm_A/feedm_A - exp( Jvalue*K() ) );
+        denominator = ( Jvalue + B() ) * exp( Jvalue*K() ) - B();
+             
+        // To avoid floating point exceptions
+        if( denominator > SMALL ){
+            return Jvalue -  A()  * ( numerator/denominator - dP );
+        }
+        else{
+            return 0;
+        }
+    }
     else
     {
         FatalErrorIn
         (
             "In the file: explicitFOmembraneVelocity.C"
-        ) << "No flux model was selected " << abort(FatalError);
+        ) << "No flux model was selected. Select either of the following models in 0/U, eq = {simple, advanced, advancedPresDiff}. " << abort(FatalError);
     }
     return 0;
 }
 
 
-Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::ridderSolve( const scalar& feedMem,
-                                                                        const scalar& drawMem,
+Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::ridderSolve( const scalar& feedMemSol,
+                                                                        const scalar& drawMemSol,
+                                                                        const scalar& feedMemPres,
+                                                                        const scalar& drawMemPres,
                                                                         const scalar& minBound,
                                                                         const scalar& maxBound,
                                                                         const scalar& xacc,
@@ -455,8 +484,8 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::ridderSolve( co
 {
 
     // Function of boundaries
-    scalar fl = fluxEquation( minBound , feedMem , drawMem );
-    scalar fh = fluxEquation( maxBound , feedMem , drawMem );
+    scalar fl = fluxEquation( minBound , feedMemSol , drawMemSol , feedMemPres , drawMemPres );
+    scalar fh = fluxEquation( maxBound , feedMemSol , drawMemSol , feedMemPres , drawMemPres );
 
     if( (fl > 0.0 && fh < 0.0) || (fl < 0.0 && fh > 0.0) )
     {
@@ -476,7 +505,7 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::ridderSolve( co
         for( int j=0 ; j<50 ; j++ )
         {
             xm = 0.5*(xl+xh);
-            fm = fluxEquation( xm , feedMem , drawMem );
+            fm = fluxEquation( xm , feedMemSol , drawMemSol , feedMemPres , drawMemPres );
 
             // First of two function evaluations
             s = sqrt( fm*fm - fl*fh );
@@ -501,7 +530,7 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::ridderSolve( co
 
             ans = xnew;
 
-            fnew = fluxEquation( ans , feedMem , drawMem );
+            fnew = fluxEquation( ans , feedMemSol , drawMemSol , feedMemPres , drawMemPres );
 
             if ( mag(fnew) < SMALL )
             {
