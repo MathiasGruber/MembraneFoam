@@ -33,7 +33,7 @@ boundaryField
     OutletFeed
     {
         type            fixedValue;
-        value           uniform 0;
+        value           uniform 100;
     }
     InletFeed
     {

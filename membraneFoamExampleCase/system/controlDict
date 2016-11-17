@@ -27,7 +27,7 @@ maxCo		    0.70;
 
 writeControl    timeStep;
 writeInterval   50;
-purgeWrite      3;
+purgeWrite      2;
 writeFormat     ascii;
 writePrecision  6;
 writeCompression off;

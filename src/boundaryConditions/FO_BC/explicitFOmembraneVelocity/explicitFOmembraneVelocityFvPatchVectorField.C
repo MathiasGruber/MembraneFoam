@@ -448,11 +448,10 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
         Like "advanced" flux equation but assuming a non-zero hydraulic pressure difference across the membrane.
         */
 
-        scalar numerator, denominator;
+        scalar expJK = exp( Jvalue*K() );
         scalar dP = drawP - feedP;
-
-        numerator = pi_mACoeff().value()*feedm_A * Jvalue * ( drawm_A/feedm_A - exp( Jvalue*K() ) );
-        denominator = ( Jvalue + B() ) * exp( Jvalue*K() ) - B();
+        scalar numerator = pi_mACoeff().value()*feedm_A * Jvalue * ( drawm_A/feedm_A - expJK );
+        scalar denominator = ( Jvalue + B() ) * expJK - B();
              
         // To avoid floating point exceptions
         if( denominator > SMALL ){
