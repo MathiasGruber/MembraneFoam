@@ -76,6 +76,21 @@ Info<< "Reading field p\n" << endl;
     );
     rho.oldTime();
 
+
+    // surfaceScalarField mW
+    // (
+    //     IOobject
+    //     (
+    //         "Mw",
+    //         runTime.timeName(),
+    //         mesh,
+    //         IOobject::NO_READ,
+    //         IOobject::AUTO_WRITE
+    //     ),
+    //     fvc::interpolate(U) & mesh.Sf()
+    // );
+
+
     #include "compressibleCreatePhi.H"
 
     Info << "Flow is assumed to be laminar\nTurbulence is currently unsupported in this solver\n" << endl;
