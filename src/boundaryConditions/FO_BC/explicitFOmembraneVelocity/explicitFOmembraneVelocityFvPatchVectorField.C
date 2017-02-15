@@ -238,6 +238,7 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
             {
                 // set the velocity
                 operator[](facei) = vfnf[facei] * (A_*(ppsf[facei]-ppsf[fm_[facei]])) / rho;
+                jout = rho*ppsf[facei];
             }
             
         }
@@ -337,6 +338,9 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::write(Ostream& os) cons
     fvPatchVectorField::write(os);
     writeEntryIfDifferent<word>(os, "p", "p", pName_);
     writeEntryIfDifferent<word>(os, "m_A", "m_A", m_AName_);
+    writeEntryIfDifferent<word>(os, "Jw", "Jw", JwName_);       //FFF
+    // writeEntryIfDifferent<word>(os, "m_A", "m_A", m_AName_);    //FFF
+    Info << "write." << endl;
     os.writeKeyword("A") << A_ << token::END_STATEMENT << nl;
     os.writeKeyword("B") << B_ << token::END_STATEMENT << nl;
     os.writeKeyword("K") << K_ << token::END_STATEMENT << nl;

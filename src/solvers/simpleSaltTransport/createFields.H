@@ -76,18 +76,18 @@ Info<< "Reading field p\n" << endl;
     );
     rho.oldTime();
 
-
-    // surfaceScalarField mW
+    // Info << "Creating Jw\n" << endl;        //FFF
+    // volScalarField Jw
     // (
     //     IOobject
     //     (
-    //         "Mw",
+    //         "Jw",
     //         runTime.timeName(),
     //         mesh,
     //         IOobject::NO_READ,
     //         IOobject::AUTO_WRITE
     //     ),
-    //     fvc::interpolate(U) & mesh.Sf()
+    //     1
     // );
 
 
