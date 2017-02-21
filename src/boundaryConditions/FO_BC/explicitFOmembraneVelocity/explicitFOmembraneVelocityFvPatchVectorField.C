@@ -109,8 +109,16 @@ Foam::explicitFOmembraneVelocityFvPatchVectorField::explicitFOmembraneVelocityFv
         // initialise the field to (0, 0, 0) if no information is given
         fvPatchField<vector>::operator=(pTraits<vector>::zero);
     }
-
-    initialise();
+    
+    // if this constructor is called by paraFoam, m_A is not part of the object registry and initialise in not executed
+    List<word> objRegNames = db().names();
+    forAll(objRegNames, iCounter)
+    {
+        if( objRegNames[iCounter] == m_AName_ )
+        {
+            initialise();
+        }
+    }
 }
 
 
@@ -238,7 +246,6 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
             {
                 // set the velocity
                 operator[](facei) = vfnf[facei] * (A_*(ppsf[facei]-ppsf[fm_[facei]])) / rho;
-                jout = rho*ppsf[facei];
             }
             
         }
@@ -338,9 +345,9 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::write(Ostream& os) cons
     fvPatchVectorField::write(os);
     writeEntryIfDifferent<word>(os, "p", "p", pName_);
     writeEntryIfDifferent<word>(os, "m_A", "m_A", m_AName_);
-    writeEntryIfDifferent<word>(os, "Jw", "Jw", JwName_);       //FFF
+    // writeEntryIfDifferent<word>(os, "Jw", "Jw", JwName_);       //FFF
     // writeEntryIfDifferent<word>(os, "m_A", "m_A", m_AName_);    //FFF
-    Info << "write." << endl;
+    // Info << "write." << endl;
     os.writeKeyword("A") << A_ << token::END_STATEMENT << nl;
     os.writeKeyword("B") << B_ << token::END_STATEMENT << nl;
     os.writeKeyword("K") << K_ << token::END_STATEMENT << nl;
@@ -356,6 +363,7 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::write(Ostream& os) cons
 
 void Foam::explicitFOmembraneVelocityFvPatchVectorField::initialise()
 {
+
     calcFaceMapping();
 
     // fill out the fs_ list so that it contains the indices of all the "feed-side" faces

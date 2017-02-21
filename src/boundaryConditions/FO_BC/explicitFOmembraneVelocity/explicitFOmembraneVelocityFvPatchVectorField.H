@@ -87,8 +87,6 @@ class explicitFOmembraneVelocityFvPatchVectorField
         //- Name of the pressure field
         word pName_;
 
-        word JwName_;       //FFF
-
         //- Name of the concentration field
         word m_AName_;
 
@@ -213,11 +211,6 @@ public:
             const word& pName() const
             {
                 return pName_;
-            }
-
-            const word& JwName() const       //FFF
-            {
-                return JwName_;
             }
 
             //- Return the name of the concentration field
