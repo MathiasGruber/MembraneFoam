@@ -110,7 +110,7 @@ Foam::explicitFOmembraneVelocityFvPatchVectorField::explicitFOmembraneVelocityFv
         fvPatchField<vector>::operator=(pTraits<vector>::zero);
     }
     
-    // if this constructor is called by paraFoam, m_A is not part of the object registry and initialise in not executed
+    // if this constructor is called by paraFoam, m_A is not part of the object registry and initialise is not executed
     List<word> objRegNames = db().names();
     forAll(objRegNames, iCounter)
     {
@@ -148,7 +148,15 @@ Foam::explicitFOmembraneVelocityFvPatchVectorField::explicitFOmembraneVelocityFv
     fm_(p.size()),
     fs_(p.size()/2)
 {
-    initialise();
+	// if this constructor is called by decomposePar, m_A is not part of the object registry and initialise is not executed
+    List<word> objRegNames = db().names();
+    forAll(objRegNames, iCounter)
+    {
+        if( objRegNames[iCounter] == m_AName_ )
+        {
+            initialise();
+        }
+    }
 }
 
 
@@ -345,9 +353,6 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::write(Ostream& os) cons
     fvPatchVectorField::write(os);
     writeEntryIfDifferent<word>(os, "p", "p", pName_);
     writeEntryIfDifferent<word>(os, "m_A", "m_A", m_AName_);
-    // writeEntryIfDifferent<word>(os, "Jw", "Jw", JwName_);       //FFF
-    // writeEntryIfDifferent<word>(os, "m_A", "m_A", m_AName_);    //FFF
-    // Info << "write." << endl;
     os.writeKeyword("A") << A_ << token::END_STATEMENT << nl;
     os.writeKeyword("B") << B_ << token::END_STATEMENT << nl;
     os.writeKeyword("K") << K_ << token::END_STATEMENT << nl;
@@ -434,6 +439,10 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
         American institude of Chemical Engineers, vol 53, No. 7, p. 1736-1744
         */
         return Jvalue - A()*( pi_mACoeff().value() * ( drawm_A*exp(-Jvalue* K() ) - feedm_A ) );
+    }
+    else if( fluxEqName_ == "noFlux" )
+    {
+        return 0;
     }
     else if( fluxEqName_ == "advanced" )
     {
