@@ -14,3 +14,10 @@
     fvVectorMatrix& UEqn = tUEqn.ref();
 
     UEqn.relax();
+
+    // if (simple.momentumPredictor())
+    // {
+    //     solve(UEqn == -fvc::grad(p));
+
+    //     fvOptions.correct(U);
+    // }

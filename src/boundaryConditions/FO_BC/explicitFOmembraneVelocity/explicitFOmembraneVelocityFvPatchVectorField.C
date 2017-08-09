@@ -336,12 +336,12 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
                 operator[](dsi) = v+slipUboundary;
             }
          
-            Info << patch().name() << ": " << "Ridders' Method - Total iterations = " << i
-                 << "\n    Water flux, " << fluxEqName_ << ": " << totalMassFlux/(sum(magSf)/2) * 3600 << " kg/(h*m2)" 
-                 << "\n    Draw/Feed m_A estimate: " << drawMemSol << " / " << feedMemSol 
-                 << "\n    Max Slip Velocity: " << maxSlip << " with slip Coeff: " << alpha() << " and under-relax factor: " << aRelax_
-                 << "\n    A: " << A_ << " / B: " << B_ << " / K: " << K_
-                 << endl;
+            // Info << patch().name() << ": " << "Ridders' Method - Total iterations = " << i
+            //      << "\n    Water flux, " << fluxEqName_ << ": " << totalMassFlux/(sum(magSf)/2) * 3600 << " kg/(h*m2)" 
+            //      << "\n    Draw/Feed m_A estimate: " << drawMemSol << " / " << feedMemSol 
+            //      << "\n    Max Slip Velocity: " << maxSlip << " with slip Coeff: " << alpha() << " and under-relax factor: " << aRelax_
+            //      << "\n    A: " << A_ << " / B: " << B_ << " / K: " << K_
+            //      << endl;
         }
     }
     fixedValueFvPatchVectorField::updateCoeffs();

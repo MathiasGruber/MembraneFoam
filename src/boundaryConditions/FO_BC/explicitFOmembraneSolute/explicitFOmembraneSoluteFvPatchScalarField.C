@@ -311,7 +311,7 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
             {
                 // Variable B and salt flux:
                 B  = rho*magU[facei];
-                Js = ( B_ * magU[facei] ) / ( pi_mACoeff_.value() / 1000 * A_ );
+                Js = ( B_ * magU[facei] ) / ( pi_mACoeff_.value() / 1000.0 * A_ );
 
                 // Set coefficients            
                 VIC_[facei] = 1.0 / (1.0 + B*deltas[facei]/A);
@@ -330,7 +330,7 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
             {
                 // Variable B and salt flux:
                 B  = -rho*magU[facei];
-                Js = ( B_ * magU[facei] ) / ( pi_mACoeff_.value() / 1000 * A_ );
+                Js = ( B_ * magU[facei] ) / ( pi_mACoeff_.value() / 1000.0 * A_ );
            
                 // Set coefficients            
                 VIC_[facei] = 1.0 / (1.0 + B*deltas[facei]/A);
@@ -351,12 +351,12 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
             
         }
 
-        totalArea = sum(patch().magSf()) / 2;
+        totalArea = sum(patch().magSf()) / 2.0;
 
-        Info << "Salt Flux: "
-             << (totalWeightFlux*1e3*3600/totalArea) << " g/(h*m2) " 
-             << ", Draw/Feed Flux Balance Residual: " << DrawMassInbalance << " / " << FeedmassInbalance
-             << endl;
+        // Info << "Salt Flux: "
+        //      << (totalWeightFlux*1e3*3600/totalArea) << " g/(h*m2) " 
+        //      << ", Draw/Feed Flux Balance Residual: " << DrawMassInbalance << " / " << FeedmassInbalance
+        //      << endl;
 
         
         // Set time index
