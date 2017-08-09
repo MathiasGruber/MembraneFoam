@@ -279,11 +279,11 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
         /* Used in test of BCs. Only strictly required for debugging */
         const fvPatchScalarField& m_A = patch().lookupPatchField<volScalarField, scalar>("m_A");
         tmp<scalarField> temp2 = m_A.patchInternalField();
-        const scalarField& m_AInternal = temp2();
+        // const scalarField& m_AInternal = temp2();
 
         // Total salt flux and area
-        scalar totalWeightFlux      = 0;
-        scalar totalArea            = 0;
+        // scalar totalWeightFlux      = 0;
+        // scalar totalArea            = 0;
 
         // Variables used
         scalar A                    = 0;
@@ -292,9 +292,9 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
         scalar rho                  = 0;
 
         // Debug variables
-        scalar newGrad              = 0;
-        scalar DrawMassInbalance    = 0;
-        scalar FeedmassInbalance    = 0;
+        // scalar newGrad              = 0;
+        // scalar DrawMassInbalance    = 0;
+        // scalar FeedmassInbalance    = 0;
 
         forAll(patch(), facei)
         {
@@ -323,8 +323,8 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
                    Following tests whether the equation 
                    A*(dM_A/dn)+B*m_A = Js is satisfied
                 */
-                newGrad = GIC_[facei]*m_AInternal[facei]+GBC_[facei];
-                DrawMassInbalance = A*newGrad+operator[](facei)*B - Js;
+                // newGrad = GIC_[facei]*m_AInternal[facei]+GBC_[facei];
+                // DrawMassInbalance = A*newGrad+operator[](facei)*B - Js;
             }
             else
             {
@@ -342,16 +342,16 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
                    Following tests whether the equation 
                    A*(dM_A/dn)+B*m_A = Js is satisfied
                 */
-                newGrad = GIC_[facei]*m_AInternal[facei]+GBC_[facei];
-                FeedmassInbalance = A*newGrad + operator[](facei)*B - Js; 
+                // newGrad = GIC_[facei]*m_AInternal[facei]+GBC_[facei];
+                // FeedmassInbalance = A*newGrad + operator[](facei)*B - Js; 
 
                 // Add to salt flux through membrane
-                totalWeightFlux += patch().magSf()[facei] * Js;    
+                // totalWeightFlux += patch().magSf()[facei] * Js;    
             }
             
         }
 
-        totalArea = sum(patch().magSf()) / 2.0;
+        // totalArea = sum(patch().magSf()) / 2.0;
 
         // Info << "Salt Flux: "
         //      << (totalWeightFlux*1e3*3600/totalArea) << " g/(h*m2) " 
