@@ -315,7 +315,7 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
 
                 // Set coefficients            
                 VIC_[facei] = 1.0 / (1.0 + B*deltas[facei]/A);
-                VBC_[facei] = Js / (A/deltas[facei] + B);
+                VBC_[facei] = -Js / (A/deltas[facei] + B);
                 GIC_[facei] = -1.0 / (A/B + deltas[facei]);
                 GBC_[facei] = Js/( A + B*deltas[facei] );  
 
