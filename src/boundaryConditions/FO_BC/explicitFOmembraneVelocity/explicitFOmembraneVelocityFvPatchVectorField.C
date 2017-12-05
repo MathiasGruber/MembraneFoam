@@ -437,10 +437,6 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
     }
     else if( fluxEqName_ == "simple" || B() < SMALL )
     {
-        Info << "using simple algo "
-             << "B = "
-             << B()
-             << endl;
         /*- Implicit flux equation,
         Valid when B is low compared to other terms, i.e. high rejection.
         See "Modelling Water Flux in Forward Osmosis: Implications for Improved Membrane Design
