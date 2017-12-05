@@ -431,21 +431,27 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
                                                                          const scalar& drawP )
 {
 
-    if( fluxEqName_ == "simple" || B() < SMALL )
+    if( fluxEqName_ == "noFlux" )
     {
+        return 0;
+    }
+    else if( fluxEqName_ == "simple" || B() < SMALL )
+    {
+        Info << "using simple algo "
+             << "B = "
+             << B()
+             << endl;
         /*- Implicit flux equation,
         Valid when B is low compared to other terms, i.e. high rejection.
         See "Modelling Water Flux in Forward Osmosis: Implications for Improved Membrane Design
         American institude of Chemical Engineers, vol 53, No. 7, p. 1736-1744
         */
+
         return Jvalue - A()*( pi_mACoeff().value() * ( drawm_A*exp(-Jvalue* K() ) - feedm_A ) );
     }
-    else if( fluxEqName_ == "noFlux" )
-    {
-        return 0;
-    }
     else if( fluxEqName_ == "advanced" )
-    {
+    {   
+        
         /*- Implicit flux equation
         Valid at any B-value.
         See "Coupled effects of internal concentration polarization and fouling on flux 
@@ -487,7 +493,7 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
         FatalErrorIn
         (
             "In the file: explicitFOmembraneVelocity.C"
-        ) << "No flux model was selected. Select either of the following models in 0/U, eq = {simple, advanced, advancedPresDiff}. " << abort(FatalError);
+        ) << "No flux model was selected. Select either of the following models in 0/U, eq = {simple, noFlux, advanced, advancedPresDiff}. " << abort(FatalError);
     }
     return 0;
 }
