@@ -431,9 +431,15 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
                                                                          const scalar& drawP )
 {
 
-    if( fluxEqName_ == "noFlux" )
+    if( fluxEqName_ == "noFlux" || A() <= SMALL*0.1 )
     {
-        return 0;
+         // Info << "executing no flux algo."
+         //    << " flux eq name: " << fluxEqName_
+         //    << " A = " << A()
+         //    << " B = " << B()
+         //     << endl;
+
+        return 0.0;
     }
     else if( fluxEqName_ == "simple" || B() < SMALL )
     {
@@ -442,18 +448,29 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
         See "Modelling Water Flux in Forward Osmosis: Implications for Improved Membrane Design
         American institude of Chemical Engineers, vol 53, No. 7, p. 1736-1744
         */
+        // Info << "executing simple algo."
+         //    << " flux eq name: " << fluxEqName_
+         //    << " A = " << A()
+         //    << " B = " << B()
+         //     << endl;
 
         return Jvalue - A()*( pi_mACoeff().value() * ( drawm_A*exp(-Jvalue* K() ) - feedm_A ) );
     }
     else if( fluxEqName_ == "advanced" )
     {   
-        
         /*- Implicit flux equation
         Valid at any B-value.
         See "Coupled effects of internal concentration polarization and fouling on flux 
              behaviors of forward osmosis membranes during humic acid filtration"
         Journal of Membrane Science 354 (2010) 123-133
         */
+                
+         // Info << "executing advanced algo."
+         //    << " flux eq name: " << fluxEqName_
+         //    << " A = " << A()
+         //    << " B = " << B()
+         //     << endl;
+
         scalar numerator    = A()*pi_mACoeff().value()*drawm_A + B();
         scalar denominator  = A()*pi_mACoeff().value()*feedm_A + Jvalue + B();
         
@@ -593,11 +610,14 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::ridderSolve( co
     }        
     else 
     {
-        if( mag(fl) < SMALL )
+        if( mag(fl) == 0.0 ){
+            return 0.0;
+        }
+        else if( mag(fl) < SMALL )
         {
             return minBound;
         }
-        if( mag(fh) < SMALL )
+        else if( mag(fh) < SMALL )
         {
             return maxBound;
         }

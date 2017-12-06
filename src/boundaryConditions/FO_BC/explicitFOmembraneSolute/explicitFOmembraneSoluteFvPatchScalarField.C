@@ -306,8 +306,10 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
                   ( 1.0 + rho_mACoeff_.value()*operator[](facei) );
             A   = rho*max(D_AB_Coeff_*
                   ( 1.0 - D_AB_mACoeff_ * operator[](facei)) , D_AB_Min_ ).value();
+            //  water permeation coefficient must not be exactly zero
+            A_ = max( A_, VSMALL );
 
-            if ( (upvf[facei]&Sf[facei]) <= 0.0 )
+            if ( (upvf[facei]&Sf[facei]) <= 0.0 )       // draw
             {
                 // Variable B and salt flux:
                 B  = rho*magU[facei];
@@ -316,8 +318,8 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
                 // Set coefficients            
                 VIC_[facei] = 1.0 / (1.0 + B*deltas[facei]/A);
                 VBC_[facei] = -Js / (A/deltas[facei] + B);
-                GIC_[facei] = -1.0 / (A/B + deltas[facei]);
-                GBC_[facei] = Js/( A + B*deltas[facei] );  
+                GIC_[facei] = -B / (A + B*deltas[facei]);
+                GBC_[facei] = -Js/( A + B*deltas[facei] );  
 
                 /* Debugging:
                    Following tests whether the equation 
@@ -335,7 +337,7 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
                 // Set coefficients            
                 VIC_[facei] = 1.0 / (1.0 + B*deltas[facei]/A);
                 VBC_[facei] = Js / (A/deltas[facei] + B);
-                GIC_[facei] = -1.0 / (A/B + deltas[facei]);
+                GIC_[facei] = -B / (A + B*deltas[facei]);
                 GBC_[facei] = Js/( A + B*deltas[facei] );  
 
                 /* Debugging:
