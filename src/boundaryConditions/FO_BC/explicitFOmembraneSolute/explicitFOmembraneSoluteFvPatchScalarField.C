@@ -290,7 +290,7 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
         scalar Js                   = 0;
         scalar B                    = 0;
         scalar rho                  = 0;
-
+        scalar pi_cCoeff			= 0;
         // Debug variables
         // scalar newGrad              = 0;
         // scalar DrawMassInbalance    = 0;
@@ -304,6 +304,7 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
             */
             rho = rho0_.value() * 
                   ( 1.0 + rho_mACoeff_.value()*operator[](facei) );
+            pi_cCoeff = pi_mACoeff_.value() / rho;
             A   = rho*max(D_AB_Coeff_*
                   ( 1.0 - D_AB_mACoeff_ * operator[](facei)) , D_AB_Min_ ).value();
             //  water permeation coefficient must not be exactly zero
@@ -313,7 +314,8 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
             {
                 // Variable B and salt flux:
                 B  = rho*magU[facei];
-                Js = ( B_ * magU[facei] ) / ( pi_mACoeff_.value() / 1000.0 * A_ );
+                Js = ( B_ * magU[facei] ) / ( pi_cCoeff * A_ );
+                // Js = ( B_ * magU[facei] ) / ( pi_mACoeff_.value() / 1000.0 * A_ );
 
                 // Set coefficients            
                 VIC_[facei] = 1.0 / (1.0 + B*deltas[facei]/A);
@@ -332,7 +334,8 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
             {
                 // Variable B and salt flux:
                 B  = -rho*magU[facei];
-                Js = ( B_ * magU[facei] ) / ( pi_mACoeff_.value() / 1000.0 * A_ );
+                Js = ( B_ * magU[facei] ) / ( pi_cCoeff * A_ );
+                // Js = ( B_ * magU[facei] ) / ( pi_mACoeff_.value() / 1000.0 * A_ );
            
                 // Set coefficients            
                 VIC_[facei] = 1.0 / (1.0 + B*deltas[facei]/A);

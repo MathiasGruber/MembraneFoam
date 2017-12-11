@@ -476,10 +476,10 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
         
         // To avoid floating point exceptions
         if( denominator > SMALL ){
-            return Jvalue - ( 1/K() ) * log( numerator / denominator );
+            return Jvalue - ( 1.0/K() ) * log( numerator / denominator );
         }
         else{
-            return 0;
+            return 0.0;
         }
     }
     else if( fluxEqName_ == "advancedPresDiff" )
@@ -498,7 +498,7 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
             return Jvalue -  A()  * ( numerator/denominator - dP );
         }
         else{
-            return 0;
+            return 0.0;
         }
     }
     else
