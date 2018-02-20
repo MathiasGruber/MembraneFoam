@@ -501,6 +501,21 @@ Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( c
             return 0.0;
         }
     }
+    else if( fluxEqName_ == "PRO" )
+    {
+        scalar expJK = exp( Jvalue*K() );
+        scalar dP = drawP - feedP;
+        scalar numerator = 1.0 - drawm_A/feedm_A*expJK;
+        scalar denominator = 1.0 + B()/Jvalue*(expJK - 1.0);
+             
+        // To avoid floating point exceptions
+        if( denominator > SMALL ){
+            return Jvalue -  A()*pi_mACoeff().value()*drawm_A * ( numerator/denominator - dP );
+        }
+        else{
+            return 0.0;
+        }
+    }
     else
     {
         FatalErrorIn
