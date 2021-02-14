@@ -51,9 +51,9 @@ Foam::explicitFOmembraneVelocityFvPatchVectorField::explicitFOmembraneVelocityFv
     slipName_("noSlip"),
     alpha_(1.0),
     aRelax_(1.0),
-    pi_mACoeff_(transProps_.lookup("pi_mACoeff")),
-    rho0_(transProps_.lookup("rho0")),
-    rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
+    pi_mACoeff_("pi_mACoeff", dimless, transProps_),
+    rho0_("rho0", dimDensity, transProps_),
+    rho_mACoeff_("rho_mACoeff", dimless, transProps_),
     fm_(p.size()),
     fs_(p.size()/2)
 {
@@ -91,9 +91,9 @@ Foam::explicitFOmembraneVelocityFvPatchVectorField::explicitFOmembraneVelocityFv
     slipName_(dict.lookupOrDefault<word>("slip", "noSlip")),
     alpha_(dict.lookupOrDefault<scalar>("alpha", 1.0)),
     aRelax_(dict.lookupOrDefault<scalar>("aRelax", 1.0)),
-    pi_mACoeff_(transProps_.lookup("pi_mACoeff")),
-    rho0_(transProps_.lookup("rho0")),
-    rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
+    pi_mACoeff_("pi_mACoeff", dimless, transProps_),
+    rho0_("rho0", dimDensity, transProps_),
+    rho_mACoeff_("rho_mACoeff", dimless, transProps_),
     fm_(p.size()),
     fs_(p.size()/2)
 {
@@ -351,8 +351,8 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
 void Foam::explicitFOmembraneVelocityFvPatchVectorField::write(Ostream& os) const
 {
     fvPatchVectorField::write(os);
-    writeEntryIfDifferent<word>(os, "p", "p", pName_);
-    writeEntryIfDifferent<word>(os, "m_A", "m_A", m_AName_);
+    os.writeEntryIfDifferent<word>("p", "p", pName_);
+    os.writeEntryIfDifferent<word>("m_A", "m_A", m_AName_);
     os.writeKeyword("A") << A_ << token::END_STATEMENT << nl;
     os.writeKeyword("B") << B_ << token::END_STATEMENT << nl;
     os.writeKeyword("K") << K_ << token::END_STATEMENT << nl;

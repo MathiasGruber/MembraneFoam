@@ -51,15 +51,14 @@ Info<< "Reading field p\n" << endl;
             IOobject::MUST_READ
         )
     );
-
-    dimensionedScalar pi_mACoeff(transportProperties.lookup("pi_mACoeff"));
-    dimensionedScalar mu0(transportProperties.lookup("mu0"));
-    dimensionedScalar mu_mACoeff(transportProperties.lookup("mu_mACoeff"));
-    dimensionedScalar D_AB_Min(transportProperties.lookup("D_AB_Min"));
-    dimensionedScalar D_AB_Coeff(transportProperties.lookup("D_AB_Coeff"));
-    dimensionedScalar D_AB_mACoeff(transportProperties.lookup("D_AB_mACoeff"));
-    dimensionedScalar rho0(transportProperties.lookup("rho0"));
-    dimensionedScalar rho_mACoeff(transportProperties.lookup("rho_mACoeff"));
+    dimensionedScalar pi_mACoeff("pi_mACoeff", dimless, transportProperties);
+    dimensionedScalar mu0("mu0", dimDynamicViscosity, transportProperties);
+    dimensionedScalar mu_mACoeff("mu_mACoeff", dimless, transportProperties);
+    dimensionedScalar D_AB_Min("D_AB_Min", dimViscosity, transportProperties);
+    dimensionedScalar D_AB_Coeff("D_AB_Coeff", dimViscosity, transportProperties);
+    dimensionedScalar D_AB_mACoeff("D_AB_mACoeff", dimless, transportProperties);
+    dimensionedScalar rho0("rho0", dimDensity, transportProperties);
+    dimensionedScalar rho_mACoeff("rho_mACoeff", dimless, transportProperties);
 
     Info << "Creating rho\n" << endl;
     volScalarField rho

@@ -44,7 +44,7 @@ Description
 
     pi_mACoeff	    pi_mACoeff	    [ 0 0 0 0 0 0 0 ]	    805.1e5;
     mu0		        mu0 		    [ 1 -1 -1 0 0 0 0 ]	    0.89e-3;
-    mu_mACoeff	    mu_mACoeff 	    [ 1 -1 -1 0 0 0 0 ] 	1.63; 
+    mu_mACoeff	    mu_mACoeff 	    [ 0 0 0 0 0 0 0 ] 	1.63; 
     D_AB_Min	    D_AB_Min 	    [ 0 2 -1 0 0 0 0 ]	    1.45e-9;
     D_AB_Coeff	    D_AB_Coeff 	    [ 0 2 -1 0 0 0 0 ]	    1.61e-9;
     D_AB_mACoeff	D_AB_mACoeff 	[ 0 0 0 0 0 0 0 ]	    14; 
@@ -277,7 +277,7 @@ public:
             //- Evaluate the patch field
             virtual void evaluate
             (
-                const Pstream::commsTypes commsType=Pstream::blocking
+                const Pstream::commsTypes commsType=Pstream::commsTypes::blocking
             );
 
             //- Return the matrix diagonal coefficients corresponding to the

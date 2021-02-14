@@ -43,9 +43,9 @@ Foam::explicitROmembraneVelocityFvPatchVectorField::explicitROmembraneVelocityFv
     pName_("p"),
     m_AName_("m_A"),
     K_(0.0),
-    pi_mACoeff_(transProps_.lookup("pi_mACoeff")),
-    rho0_(transProps_.lookup("rho0")),
-    rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
+    pi_mACoeff_("pi_mACoeff", dimless, transProps_),
+    rho0_("rho0", dimDensity, transProps_),
+    rho_mACoeff_("rho_mACoeff", dimless, transProps_),
     fm_(p.size())
 {
     calcFaceMapping();
@@ -75,9 +75,9 @@ Foam::explicitROmembraneVelocityFvPatchVectorField::explicitROmembraneVelocityFv
     pName_(dict.lookupOrDefault<word>("p", "p")),
     m_AName_(dict.lookupOrDefault<word>("m_A", "m_A")),
     K_(readScalar(dict.lookup("K"))),
-    pi_mACoeff_(transProps_.lookup("pi_mACoeff")),
-    rho0_(transProps_.lookup("rho0")),
-    rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
+    pi_mACoeff_("pi_mACoeff", dimless, transProps_),
+    rho0_("rho0", dimDensity, transProps_),
+    rho_mACoeff_("rho_mACoeff", dimless, transProps_),
     fm_(p.size())
 {
     if (dict.found("value"))
@@ -229,8 +229,8 @@ void Foam::explicitROmembraneVelocityFvPatchVectorField::updateCoeffs()
 void Foam::explicitROmembraneVelocityFvPatchVectorField::write(Ostream& os) const
 {
     fvPatchVectorField::write(os);
-    writeEntryIfDifferent<word>(os, "p", "p", pName_);
-    writeEntryIfDifferent<word>(os, "m_A", "m_A", m_AName_);
+    os.writeEntryIfDifferent<word>("p", "p", pName_);
+    os.writeEntryIfDifferent<word>("m_A", "m_A", m_AName_);
     os.writeKeyword("K") << K_ << token::END_STATEMENT << nl;
 //    os.writeKeyword("pi_mACoeff") << pi_mACoeff_.value() << token::END_STATEMENT << nl;
 //    os.writeKeyword("rho0") << rho0_ << token::END_STATEMENT << nl;

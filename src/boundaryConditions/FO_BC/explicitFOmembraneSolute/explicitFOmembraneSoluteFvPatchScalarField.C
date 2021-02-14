@@ -60,12 +60,12 @@ explicitFOmembraneSoluteFvPatchScalarField::explicitFOmembraneSoluteFvPatchScala
     A_(readScalar(transProps_.lookup("A"))),
     B_(readScalar(transProps_.lookup("B"))),
     K_(readScalar(transProps_.lookup("K"))),
-    D_AB_Min_(transProps_.lookup("D_AB_Min")),
-    D_AB_Coeff_(transProps_.lookup("D_AB_Coeff")),
-    D_AB_mACoeff_(transProps_.lookup("D_AB_mACoeff")),
-    rho0_(transProps_.lookup("rho0")),
-    rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
-    pi_mACoeff_(transProps_.lookup("pi_mACoeff")),
+    D_AB_Min_("D_AB_Min", dimViscosity, transProps_),
+    D_AB_Coeff_("D_AB_Coeff", dimViscosity, transProps_),
+    D_AB_mACoeff_("D_AB_mACoeff", dimless, transProps_),
+    rho0_("rho0", dimDensity, transProps_),
+    rho_mACoeff_("rho_mACoeff", dimless, transProps_),
+    pi_mACoeff_("pi_mACoeff", dimless, transProps_),
     fm_(p.size()),
     VIC_(p.size()),
     VBC_(p.size()),
@@ -100,12 +100,12 @@ explicitFOmembraneSoluteFvPatchScalarField::explicitFOmembraneSoluteFvPatchScala
     A_(readScalar(transProps_.lookup("A"))),
     B_(readScalar(transProps_.lookup("B"))),
     K_(readScalar(transProps_.lookup("K"))),
-    D_AB_Min_(transProps_.lookup("D_AB_Min")),
-    D_AB_Coeff_(transProps_.lookup("D_AB_Coeff")),
-    D_AB_mACoeff_(transProps_.lookup("D_AB_mACoeff")),
-    rho0_(transProps_.lookup("rho0")),
-    rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
-    pi_mACoeff_(transProps_.lookup("pi_mACoeff")),
+    D_AB_Min_("D_AB_Min", dimViscosity, transProps_),
+    D_AB_Coeff_("D_AB_Coeff", dimViscosity, transProps_),
+    D_AB_mACoeff_("D_AB_mACoeff", dimless, transProps_),
+    rho0_("rho0", dimDensity, transProps_),
+    rho_mACoeff_("rho_mACoeff", dimless, transProps_),
+    pi_mACoeff_("pi_mACoeff", dimless, transProps_),
     fm_(p.size()),
     VIC_(p.size()),
     VBC_(p.size()),
@@ -412,8 +412,8 @@ tmp<Field<scalar> > explicitFOmembraneSoluteFvPatchScalarField::gradientBoundary
 void explicitFOmembraneSoluteFvPatchScalarField::write(Ostream& os) const
 {
     fvPatchScalarField::write(os);
-    writeEntryIfDifferent<word>(os, "U", "U", UName_);
-    writeEntryIfDifferent<word>(os, "m_A", "m_A", UName_);
+    os.writeEntryIfDifferent<word>("U", "U", UName_);
+    os.writeEntryIfDifferent<word>("m_A", "m_A", UName_);
 
     this->writeEntry("value", os);
 }
