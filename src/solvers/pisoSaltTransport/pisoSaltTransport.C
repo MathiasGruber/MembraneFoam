@@ -41,6 +41,7 @@ Description
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
+#include "../membraneSaltAudit.H"
 #include "MULES.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -53,7 +54,7 @@ int main(int argc, char *argv[])
     #include "readGravitationalAcceleration.H"
     #include "readControls.H"
     #include "createFields.H"
-    #include "CourantNo.H"
+    #include "compressibleCourantNo.H"
     #include "setInitialDeltaT.H"
     #include "m_AInitialContinuity.H"
 
@@ -96,13 +97,23 @@ int main(int argc, char *argv[])
         Info<< "Time since last iteration = " << timeSinceLast << " s" << endl;
 
         // Show the execution speed
-        Info<< "Simulation Speed = "
-            <<  runTime.deltaTValue() / ( timeSinceLast / 86400 )
-            << " s / day" << endl;
+        if (timeSinceLast > 0)
+        {
+            Info<< "Simulation Speed = "
+                << runTime.deltaTValue()*86400/timeSinceLast
+                << " s / day" << endl;
+        }
+        else
+        {
+            Info<< "Simulation speed unavailable: step below clock resolution" << endl;
+        }
 
         // Show the execution time
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s\n\n" << endl;
     }
+
+    runTime.writeNow();
+    #include "../membraneDiagnostics.H"
 
     Info<< "End\n" << endl;
 

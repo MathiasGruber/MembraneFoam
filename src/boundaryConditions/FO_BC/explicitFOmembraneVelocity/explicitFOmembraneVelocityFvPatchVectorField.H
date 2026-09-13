@@ -26,39 +26,33 @@ Class
     Foam::explicitFOmembraneVelocityFvPatchVectorField
 
 Description
-    Foam::explicitFOmembraneVelocityFvPatchVectorField
+    Forward-osmosis water flux for an asymmetric membrane in AL-FS orientation.
+    Both sides must be coincident, equal-area faces in the same conformal patch.
+    Each pair must remain local to one MPI rank. forwardDirection is required
+    and points from feed into draw, independently of patch-face ordering.
 
-    This boundary condition is designed to simulate an assymetric membrane 
-    used in an forward osmosis setup. The full boundary condition set up 
-    with typical values is given below:
+    Example in 0/U:
+    membrane
     {
-        type 			explicitFOmembraneVelocity;
-        value			uniform (0 0 0);
-        forwardDirection	( 0 -1 0 );	// vector defining "forward"
-										// direction of membrane. If
-										// missing the concentration
-										// of the "m_A" field is used
-        A			value
-        K			value
-        B			value		// Solute permeation coefficient, only used in advanced flux equation
-        eq      	"simple"	// Simple applies to high R-values. Otherwise use
-								// "advanced" and specify B
-        m_A			m_A;		// field of solute concentration as a mass fraction.
-								// Defaults to "m_A". Using "none" causes boundary 
-								// condition to ignore osmotic pressure
-        slip    "noSlip"        // "noSlip" or "slip". If slip, then set alpha and kappa
-        alpha   0.1;            // Slip coefficient depending on porosity and pore size
-        aRelax  1               // relaxation factor for slip V
+        type explicitFOmembraneVelocity;
+        forwardDirection (0 0 1);
+        eq advanced;
+        slip noSlip;
+        value uniform (0 0 0);
     }
 
-    The values of hydrodynamic pressure do not take gravity explicitly into 
-    account, so it is assumed that the membrane has a thickness of zero.
+    A [m/(Pa s)], B [m/s] and K [s/m] are read from transportProperties,
+    not from this patch dictionary. m_A is a mass fraction [kg/kg].
+    eq advanced includes reverse salt permeability; eq simple is the
+    high-rejection approximation. The supported osmotic mode assumes negligible
+    hydraulic pressure difference and draw surface concentration >= feed.
+    Reversed driving or invalid pairing fails explicitly.
 
-    Currently only the FO (Forward Osmosis) mode is supported. The draw 
-    solution must be on the side of the porous support. The membrane acts as
-    a one-way gate and will not allow flow to occur in the reverse direction.
+    Draw velocity is scaled to conserve water mass across the density jump.
+    Optional slip applies only on the draw side: alpha is a length [m], and
+    aRelax is its dimensionless relaxation factor. Use noSlip for the paper cases.
+    The legacy m_A none mode instead uses A times the pressure difference [Pa].
 
- 
 SourceFiles
     explicitFOmembraneVelocityFvPatchVectorField.C
 
@@ -131,6 +125,12 @@ class explicitFOmembraneVelocityFvPatchVectorField
 
         //- feed-side index list
         List<label> fs_;
+
+        //- Reuse roots only for exactly unchanged concentrations. Coefficients
+        //  are fixed for this patch-field instance; mapping invalidates the cache.
+        scalarField cachedFeed_;
+        scalarField cachedDraw_;
+        scalarField cachedFlux_;
 
 public:
 
@@ -320,24 +320,8 @@ private:
         //- compute the cell-index mapping
         void calcFaceMapping();
 
-        //- Flux equation
-        Foam::scalar fluxEquation( const scalar&, 
-                             const scalar&, 
-                             const scalar& );
-
-        //- Root finder used by flux calculation
-        Foam::scalar ridderSolve( const scalar&,
-                            const scalar&,
-                            const scalar&,
-                            const scalar&,
-                            const scalar&,
-                            scalar& );
-
-        //- Return Numerical Recipes style sign check
-        inline static scalar checkSign(const scalar& a, const scalar& b)
-        {
-            return (b >= 0 ? a < 0 : a >= 0); 
-        }
+        //- Monotone, bracketed membrane flux solve; accumulates iterations.
+        scalar solveFlux(const scalar& feed, const scalar& draw, scalar& iterations);
 
 
 };
