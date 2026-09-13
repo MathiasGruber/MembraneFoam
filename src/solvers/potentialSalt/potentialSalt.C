@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 
     // Force the write
     U.write();
-    p.write();
+    if (args.found("writep")) p.write();
     
     Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
         << "  ClockTime = " << runTime.elapsedClockTime() << " s"
