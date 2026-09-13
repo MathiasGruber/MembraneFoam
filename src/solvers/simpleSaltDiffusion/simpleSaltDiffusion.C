@@ -25,16 +25,13 @@ Application
     simpleSaltDiffusion
 
 Description
-    Steady-state solver for incompressible, turbulent flow with
-    implicit or explicit porosity treatment and support for multiple reference
-    frames (MRF)
+    Steady diffusion of solute with concentration-dependent density and
+    diffusivity, multiplied by the prescribed dimensionless Diff_ratio field.
 
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-#include "singlePhaseTransportModel.H"
 #include "simpleControl.H"
-#include "fvIOoptionList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -47,7 +44,6 @@ int main(int argc, char *argv[])
     simpleControl simple(mesh);
 
     #include "createFields.H"
-    #include "createFvOptions.H"
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

@@ -45,6 +45,9 @@
         mesh
     );
 
+    // Evaluate flow-rate inlet conditions before constructing the initial flux.
+    U.correctBoundaryConditions();
+
     surfaceScalarField phi
     (
         IOobject

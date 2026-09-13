@@ -11,4 +11,14 @@
       - fvc::div(mu*dev2(fvc::grad(U)().T()))
     );
 
-    UEqn().relax();
+    UEqn.ref().relax();
+
+    if (simple.momentumPredictor())
+    {
+        solve
+        (
+            UEqn.ref()
+         == -fvc::grad(p)
+            - fvc::reconstruct(ghf*fvc::snGrad(rho)*mesh.magSf())
+        );
+    }

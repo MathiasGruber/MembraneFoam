@@ -29,6 +29,8 @@ License
 #include "fvPatchFieldMapper.H"
 #include "volFields.H"
 #include "surfaceFields.H"
+#include "membraneFaceMapping.H"
+#include "fluxModel.H"
 
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
@@ -203,6 +205,7 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::autoMap
 )
 {
     fixedValueFvPatchVectorField::autoMap(m);
+    initialise();
 }
 
 
@@ -213,6 +216,7 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::rmap
 )
 {
     fixedValueFvPatchVectorField::rmap(pvf, addr);
+    initialise();
 }
 
 
@@ -233,19 +237,16 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
             // get the pressure field
             const fvPatchField<scalar>& ppsf = patch().lookupPatchField<volScalarField, scalar>(pName_);
 
-            scalar rho = rho0_.value();
+            // p is in Pa; A is a volumetric permeability in m/(Pa s).
             forAll(ppsf, facei)
             {
                 // set the velocity
-                operator[](facei) = vfnf[facei] * (A_*(ppsf[facei]-ppsf[fm_[facei]])) / rho;
+                operator[](facei) = vfnf[facei] * (A_*(ppsf[facei]-ppsf[fm_[facei]]));
             }
             
         }
         else
         {
-            scalar maxBound      = 1e-1;                 // Max flux
-            scalar minBound      = 0;                    // Min flux
-            scalar xacc          = 1e-10;                // Accuracy for ridder' method
             scalar feedMem       = 0;                    // Variable for feed membrane m_A
             scalar drawMem       = 0;                    // Variable for draw membrane m_A
             scalar i             = 0;                    // Total iterations counter
@@ -262,16 +263,21 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
             const scalarField& magSf = patch().magSf();
             
             // Get the current internal velocity field
-            const fvPatchVectorField& Ufield = patch().lookupPatchField<volVectorField, vector>("U");
-            tmp<vectorField> temp            = Ufield.patchInternalField();
+            tmp<vectorField> temp            = this->patchInternalField();
             const vectorField& internalU     = temp();
-            //tmp<vectorField> temp2           = Ufield.snGrad();
-            //const vectorField& gradU         = temp2();
             
             // Get cell-centre distances
             // OpenFoam 2.2 and below: const scalarField deltas = 1.0/patch().deltaCoeffs();
             tmp<scalarField> temp0 = 1.0/patch().deltaCoeffs();
             const scalarField& deltas = temp0();
+
+            const bool resetFluxCache = cachedFeed_.size() != fs_.size();
+            if (resetFluxCache)
+            {
+                cachedFeed_.setSize(fs_.size(), 0);
+                cachedDraw_.setSize(fs_.size(), 0);
+                cachedFlux_.setSize(fs_.size(), 0);
+            }
 
             forAll(fs_, facei)
             {
@@ -280,8 +286,18 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
                 feedMem = m_A[fsi];
                 drawMem = m_A[dsi];
 
-                // User ridder's method to solve for the flux. Save flux in rtn.
-                scalar flux = ridderSolve(feedMem, drawMem, minBound, maxBound, xacc, i); 
+                if
+                (
+                    resetFluxCache
+                 || cachedFeed_[facei] != feedMem
+                 || cachedDraw_[facei] != drawMem
+                )
+                {
+                    cachedFlux_[facei] = solveFlux(feedMem, drawMem, i);
+                    cachedFeed_[facei] = feedMem;
+                    cachedDraw_[facei] = drawMem;
+                }
+                const scalar flux = cachedFlux_[facei];
                 
                 // Calculate the velocity for the assymetric membrane
                 vector v = vfnf[fsi] * flux;
@@ -296,9 +312,10 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
                 totalMassFlux += flux * rho0_.value()*(1.0 + rho_mACoeff_.value() * feedMem) * magSf[dsi];
 
 				// Slip boundary condition
+                slipUboundary = vector::zero;
 				if( slipName() == "slip" ){
                     slipUinternal = internalU[dsi] - (internalU[dsi] & vfnf[dsi]) * vfnf[dsi];
-                    slipPrev = operator[](dsi) - cmptMultiply (cmptMultiply ( vfnf [ dsi ] , vfnf [ dsi ] ) , operator[](dsi) );
+                    slipPrev = operator[](dsi) - (operator[](dsi) & vfnf[dsi])*vfnf[dsi];
 					if( mag(slipUinternal) > SMALL ){
                         dUdy = (mag(slipUinternal) - mag(slipPrev) ) / deltas[dsi];
                         slipUboundary =  alpha()*dUdy * (slipUinternal/mag(slipUinternal)); 
@@ -313,8 +330,8 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
                 operator[](dsi) = v+slipUboundary;
             }
          
-            Info << patch().name() << ": " << "Ridders' Method - Total iterations = " << i
-                 << "\n    Water flux, " << fluxEqName_ << ": " << totalMassFlux/(sum(magSf)/2) * 3600 << " kg/(h*m2)" 
+            Info << patch().name() << ": " << "Bracketed flux solve - Total iterations = " << i
+                 << "\n    Water flux, " << fluxEqName_ << ": " << gSum(scalarField(1, totalMassFlux))/max(gSum(magSf)/2, VSMALL) * 3600 << " kg/(h*m2)"
                  << "\n    Draw/Feed m_A estimate: " << drawMem << " / " << feedMem 
                  << "\n    Max Slip Velocity: " << maxSlip << " with slip Coeff: " << alpha() << " and under-relax factor: " << aRelax_
                  << "\n    A: " << A_ << " / B: " << B_ << " / K: " << K_
@@ -328,8 +345,8 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::updateCoeffs()
 void Foam::explicitFOmembraneVelocityFvPatchVectorField::write(Ostream& os) const
 {
     fvPatchVectorField::write(os);
-    writeEntryIfDifferent<word>(os, "p", "p", pName_);
-    writeEntryIfDifferent<word>(os, "m_A", "m_A", m_AName_);
+    os.writeEntry("p", pName_);
+    os.writeEntry("m_A", m_AName_);
     os.writeKeyword("A") << A_ << token::END_STATEMENT << nl;
     os.writeKeyword("B") << B_ << token::END_STATEMENT << nl;
     os.writeKeyword("K") << K_ << token::END_STATEMENT << nl;
@@ -346,210 +363,66 @@ void Foam::explicitFOmembraneVelocityFvPatchVectorField::write(Ostream& os) cons
 void Foam::explicitFOmembraneVelocityFvPatchVectorField::initialise()
 {
     calcFaceMapping();
+    cachedFeed_.clear();
+    cachedDraw_.clear();
+    cachedFlux_.clear();
 
-    // fill out the fs_ list so that it contains the indices of all the "feed-side" faces
+    if (fluxEqName_ != "simple" && fluxEqName_ != "advanced")
+        FatalErrorInFunction << "eq must be simple or advanced" << exit(FatalError);
+    if (slipName_ != "noSlip" && slipName_ != "slip")
+        FatalErrorInFunction << "slip must be noSlip or slip" << exit(FatalError);
     if (mag(forwardDirection_) < VSMALL)
+        FatalErrorInFunction << "Specify forwardDirection from feed into draw. "
+            << "Inferring orientation from a field during construction is ambiguous."
+            << exit(FatalError);
+    fs_.setSize(patch().size()/2);
+    const auto normals = patch().nf();
+    label count = 0;
+    forAll(fm_,i)
     {
-        Info << patch().name() << ": forward direction specified by mass fraction\n" << endl;
-
-        // the forward direction of the membrane has not been defined by the user
-        // so the mass fraction will be used to determine the feed side
-        const fvPatchScalarField& m_Apsf = patch().lookupPatchField<volScalarField, scalar>(m_AName_);
-        tmp<scalarField> tm_Asf = m_Apsf.patchInternalField();
-        const scalarField& m_Asf = tm_Asf();
-        forAll(fs_, facei)
-        {
-            fs_[facei] = (m_Asf[facei] > m_Asf[fm_[facei]]) ? fm_[facei] : facei;
-        }
+        if (i > fm_[i]) continue;
+        const scalar alignment = normals()[i] & forwardDirection_;
+        if (mag(alignment) < SMALL)
+            FatalErrorInFunction << "forwardDirection is tangent to membrane" << exit(FatalError);
+        fs_[count++] = alignment > 0 ? i : fm_[i];
     }
-    else
-    {
-        Info << patch().name() << ": forward direction specified by user\n" << endl;
-
-        tmp<vectorField> tvfnf = patch().nf();
-        const vectorField& vfnf = tvfnf();
-        forAll(fs_, facei)
-        {
-            fs_[facei] = ((vfnf[facei] & forwardDirection_) < 0.0) ? fm_[facei] : facei;
-        }
-    }
+    if (count != fs_.size())
+        FatalErrorInFunction << "Incomplete membrane pairing" << exit(FatalError);
 }
 
 void Foam::explicitFOmembraneVelocityFvPatchVectorField::calcFaceMapping()
 {
-    // set up the face-index mapping based on cell centres
-    const vectorField& cfvf = patch().Cf();
-    forAll(cfvf, facei)
-    {
-        for(label i=0; i<cfvf.size(); i++)
-        {
-            if (facei!=i)
-            {
-                if (mag(cfvf[facei]-cfvf[i])<1e-9)
-                {
-                    fm_[facei]=i;
-                    if (debug)
-                    {
-                        Info << "patch face " << facei << " -> " << i << endl;
-                    }
-                    break;
-                }
-            }
-        }
-    }
+    membraneFaceMapping(patch(), fm_);
 }
 
 
-Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::fluxEquation( const scalar& Jvalue, 
-                                                                         const scalar& feedm_A, 
-                                                                         const scalar& drawm_A )
+Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::solveFlux
+(
+    const scalar& feedMem,
+    const scalar& drawMem,
+    scalar& i
+)
 {
 
-    if( fluxEqName_ == "simple" || B() < SMALL )
+    if (min(feedMem, drawMem) < -1e-12)
+        FatalErrorInFunction
+            << "Negative membrane mass fraction on patch " << patch().name()
+            << ": feed=" << feedMem << ", draw=" << drawMem
+            << ". Refine the mesh or reduce the time step." << exit(FatalError);
+    int iterations = 0;
+    try
     {
-        /*- Implicit flux equation,
-        Valid when B is low compared to other terms, i.e. high rejection.
-        See "Modelling Water Flux in Forward Osmosis: Implications for Improved Membrane Design
-        American institude of Chemical Engineers, vol 53, No. 7, p. 1736-1744
-        */
-        return Jvalue - A()*( pi_mACoeff().value() * ( drawm_A*exp(-Jvalue* K() ) - feedm_A ) );
+        const scalar result = membrane::flux(max(feedMem, scalar(0)), max(drawMem, scalar(0)), A_, B_, K_,
+            pi_mACoeff_.value(), fluxEqName_ == "advanced", &iterations);
+        i += iterations;
+        return result;
     }
-    else if( fluxEqName_ == "advanced" )
+    catch (const std::exception& error)
     {
-        /*- Implicit flux equation
-        Valid at any B-value.
-        See "Coupled effects of internal concentration polarization and fouling on flux 
-             behaviors of forward osmosis membranes during humic acid filtration"
-        Journal of Membrane Science 354 (2010) 123-133
-        */
-        // Info << A()*pi_mACoeff().value()*drawm_A << " vs. " << B() << endl;
-        // Info << A()*pi_mACoeff().value()*feedm_A << " and " << Jvalue << " vs. " << B() << endl;
-        scalar numerator    = A()*pi_mACoeff().value()*drawm_A + B();
-        scalar denominator  = A()*pi_mACoeff().value()*feedm_A + Jvalue + B();
-        
-        // To avoid floating point exceptions
-        if( denominator > SMALL ){
-            return Jvalue - ( 1/K() ) * log( numerator / denominator );
-        }
-        else{
-            return 0;
-        }
-    }
-    else
-    {
-        FatalErrorIn
-        (
-            "In the file: explicitFOmembraneVelocity.C"
-        ) << "No flux model was selected " << abort(FatalError);
-    }
-    return 0;
-}
-
-
-Foam::scalar Foam::explicitFOmembraneVelocityFvPatchVectorField::ridderSolve( const scalar& feedMem,
-                                                                        const scalar& drawMem,
-                                                                        const scalar& minBound,
-                                                                        const scalar& maxBound,
-                                                                        const scalar& xacc,
-                                                                        scalar& i )
-{
-
-    // Function of boundaries
-    scalar fl = fluxEquation( minBound , feedMem , drawMem );
-    scalar fh = fluxEquation( maxBound , feedMem , drawMem );
-
-    if( (fl > 0.0 && fh < 0.0) || (fl < 0.0 && fh > 0.0) )
-    {
-        i++;
-
-        // Save bounds in new variables
-        scalar xl = minBound;
-        scalar xh = maxBound;
-
-        // An unlikely value, to simplify logic below
-        scalar ans = -1.11e-30;
-
-        // Variables used
-        scalar xm, fm, s, xnew, fnew;
-
-        // iteration counter
-        for( int j=0 ; j<50 ; j++ )
-        {
-            xm = 0.5*(xl+xh);
-            fm = fluxEquation( xm , feedMem , drawMem );
-
-            // First of two function evaluations
-            s = sqrt( fm*fm - fl*fh );
-            if( s < SMALL )
-            {
-                return ans;
-            }
-
-            // Update the formula and check answer
-            if (fl >= fh)
-            {
-                xnew = xm + (xm - xl)*fm/s;
-            }
-            else
-            {
-                xnew = xm - (xm - xl)*fm/s;
-            }
-            if ( mag( xnew - ans ) <= xacc)
-            {
-                return ans;
-            }
-
-            ans = xnew;
-
-            fnew = fluxEquation( ans , feedMem , drawMem );
-
-            if ( mag(fnew) < SMALL )
-            {
-                return ans;
-            }
-
-            // Bookkeeping to keep root bracketed on next iteration
-            if (checkSign(fm,fnew))
-            {
-                xl = xm;
-                xh = fm;
-                xh = ans;
-                fh = fnew;
-            }
-            else if (checkSign(fl,fnew) )
-            {
-                xh = ans;
-                fh = fnew;
-            } 
-            else if (checkSign(fh,fnew) )
-            {
-                xl = ans;
-                fl=fnew;
-            } 
-            else 
-            {
-                FatalErrorIn
-                (
-                    "In the file: explicitFOmembraneVelocity.C"
-                )   << "Error in search logic" << abort(FatalError);
-            }
-            // Check the bounds
-            if ( mag( xh - xl ) <= xacc)
-            {
-                return ans;
-            }
-        }
-    }        
-    else 
-    {
-        if( mag(fl) < SMALL )
-        {
-            return minBound;
-        }
-        if( mag(fh) < SMALL )
-        {
-            return maxBound;
-        }
+        FatalErrorInFunction << error.what()
+            << " on patch " << patch().name()
+            << ": feed=" << feedMem << ", draw=" << drawMem
+            << exit(FatalError);
     }
     return 0;
 }

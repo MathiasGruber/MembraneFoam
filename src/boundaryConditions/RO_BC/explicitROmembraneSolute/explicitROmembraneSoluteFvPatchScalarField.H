@@ -26,34 +26,27 @@ Class
     Foam::explicitROmembraneSoluteFvPatchScalarField
 
 Description
-    Foam::explicitROmembraneSoluteFvPatchScalarField
+    Salt rejection for the paired explicitROmembraneVelocity condition.
+    Concentration is salt mass fraction [kg/kg].
 
-    this boundary condition is designed to simulate a porous baffle wall 
-    across which a scalar is transported. This is designed to work with the
-    explicitROmembraneSoluteVelocityFvPatchVectorField. The full boundary 
-    condition set up with typical values is given below:
+    Example in 0/m_A:
+    membrane
     {
-        type 	explicitROmembraneSolute;
-        value	uniform 0;	// initialisation value
-        U	U; 		// velocity field (default value of "U")
-        R	1; 		// rejection coefficient
-                                //  0 - no rejection
-                                //  1 - full rejection 
+        type explicitROmembraneSolute;
+        U U;
+        R 0.99;
+        value uniform 0;
     }
-    The following parameters are set in the "constant/transportProperties"
-    dictionary and are shared with the solver
-    D_AB_Min        D_AB_Min        [ 0 2 -1 0 0 0 0 ]      1.45e-9;
-    D_AB_Coeff      D_AB_Coeff      [ 0 2 -1 0 0 0 0 ]      1.61e-9;
-    D_AB_mACoeff    D_AB_mACoeff    [ 0 0 0 0 0 0 0 ]       14;
-    rho0            rho0            [ 1 -3 0 0 0 0 0 ]      997.1;
-    rho_mACoeff     rho_mACoeff     [ 0 0 0 0 0 0 0 ]       694;
 
-    Density changes across the membrane are not taken into account.
-    For more details see: 
-    Fletcher, D. F., Wiley, D. E. (2004) A computational fluids dynamics study
-    of buoyancy effects in reverse osmosis. Journal of Membrane Science 245
-    (2004) pages 175-181.
- 
+    Patch-local R is dimensionless rejection in [0,1]. D_AB_Min, D_AB_Coeff,
+    D_AB_mACoeff, rho0 and rho_mACoeff come from transportProperties.
+    rho_mACoeff is dimensionless: use 694/997.1 for rho = 997.1 + 694*m_A.
+    The companion velocity condition supplies density-consistent paired flow.
+
+    Resolve the upstream boundary layer so U_n*R*delta/D < 1, where delta is
+    the boundary face-to-cell normal distance. An unresolved Robin denominator
+    fails explicitly instead of creating an unbounded concentration.
+
 SourceFiles
     explicitROmembraneSoluteFvPatchScalarField.C
 
@@ -267,7 +260,7 @@ public:
             //- Evaluate the patch field
             virtual void evaluate
             (
-                const Pstream::commsTypes commsType=Pstream::blocking
+                const Pstream::commsTypes commsType=Pstream::commsTypes::blocking
             );
 
             //- Return the matrix diagonal coefficients corresponding to the

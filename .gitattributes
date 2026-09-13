@@ -1,0 +1,4 @@
+# Keep generated figures out of the default source-review diff.
+docs/figures/* linguist-generated=true
+# SVG paths can contain trailing spaces.
+docs/figures/*.svg -whitespace
