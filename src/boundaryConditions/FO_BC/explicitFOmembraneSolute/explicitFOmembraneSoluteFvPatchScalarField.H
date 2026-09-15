@@ -26,31 +26,29 @@ Class
     Foam::explicitFOmembraneSoluteFvPatchScalarField
 
 Description
-    Foam::explicitFOmembraneSoluteFvPatchScalarField
+    Coupled reverse salt transport for explicitFOmembraneVelocity.
+    m_A is salt mass fraction [kg/kg], not molarity. The Robin coefficients
+    enforce outward transport rho*m_A*(U dot n) - rho*D*snGrad(m_A).
+    Salt leaves the draw solution and enters the feed with equal total flux.
 
-    This boundary condition is designed to simulate an assymetric membrane 
-    across which a scalar is transported. This is designed to work with the
-    explicitFOmembraneSoluteVelocityFvPatchVectorField. The full boundary 
-    condition set up with typical values is given below:
+    Example in 0/m_A:
+    membrane
     {
-        type 	    explicitFOmembraneSolute;
-        value	    uniform 0;
-        U	U; 		                        // velocity field (default value of "U")
-        B	1e-7; 		                    // solute permeation coefficient 
+        type explicitFOmembraneSolute;
+        U U;
+        value uniform 0;
     }
 
-    The following parameters are set in the "constant/transportProperties"
-    dictionary and are shared with the solver.
+    A, B, K, pi_mACoeff and fluid-property coefficients are read from
+    constant/transportProperties. pi_mACoeff has pressure dimensions;
+    mu_mACoeff and rho_mACoeff are dimensionless multipliers. For the published
+    density rho = 997.1 + 694*m_A, use rho_mACoeff = 694/997.1.
+    See scripts/make_channel.py for a complete SI dictionary.
 
-    pi_mACoeff	    pi_mACoeff	    [ 0 0 0 0 0 0 0 ]	    805.1e5;
-    mu0		        mu0 		    [ 1 -1 -1 0 0 0 0 ]	    0.89e-3;
-    mu_mACoeff	    mu_mACoeff 	    [ 1 -1 -1 0 0 0 0 ] 	1.63; 
-    D_AB_Min	    D_AB_Min 	    [ 0 2 -1 0 0 0 0 ]	    1.45e-9;
-    D_AB_Coeff	    D_AB_Coeff 	    [ 0 2 -1 0 0 0 0 ]	    1.61e-9;
-    D_AB_mACoeff	D_AB_mACoeff 	[ 0 0 0 0 0 0 0 ]	    14; 
-    rho0		    rho0		    [ 1 -3 0 0 0 0 0 ]	    997.1;
-    rho_mACoeff	    rho_mACoeff	    [ 0 0 0 0 0 0 0 ]	    0.696;
- 
+    Pairing requires a two-sided conformal patch and local partners under MPI.
+    Coefficients are explicit in the membrane velocity and concentration-dependent
+    properties and are refreshed once per SIMPLE iteration or physical time step.
+
 SourceFiles
     explicitFOmembraneSoluteFvPatchScalarField.C
 
@@ -277,7 +275,7 @@ public:
             //- Evaluate the patch field
             virtual void evaluate
             (
-                const Pstream::commsTypes commsType=Pstream::blocking
+                const Pstream::commsTypes commsType=Pstream::commsTypes::blocking
             );
 
             //- Return the matrix diagonal coefficients corresponding to the

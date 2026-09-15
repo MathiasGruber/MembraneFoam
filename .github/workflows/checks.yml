@@ -1,0 +1,26 @@
+name: Portable checks
+on: [push, pull_request]
+jobs:
+  model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test membrane equation and limiting cases
+        run: |
+          c++ -std=c++17 -Wall -Wextra -Werror -Isrc/membraneModels tests/unit/test_flux.cpp -o /tmp/test-flux
+          /tmp/test-flux
+          python3 -m unittest discover -s tests/unit -p 'test_*.py'
+      - name: Check Python and shell syntax
+        run: |
+          python3 -m compileall -q examples
+          for script in Allwmake Allwclean tests/run_openfoam.sh; do
+            bash -n "$script"
+          done
+      - name: Generate verification inputs
+        run: |
+          python3 examples/run.py channel /tmp/fo --generate-only
+          python3 examples/run.py channel /tmp/ro --generate-only --mode RO --nz 48
+          python3 examples/run.py cf042 /tmp/cf042 --generate-only
+          python3 examples/run.py 3dblock /tmp/3dblock --generate-only
+          python3 examples/run.py 3dblock /tmp/spacers --generate-only --spacers 2 --spacer-radius 0.0005
+          python3 examples/run.py channel /tmp/transient --generate-only --transient 0.002 --time-step 0.0002 --non-orthogonal-correctors 0

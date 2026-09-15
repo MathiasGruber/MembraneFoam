@@ -26,25 +26,26 @@ Class
     Foam::explicitROmembraneVelocityFvPatchVectorField
 
 Description
-    Foam::explicitROmembraneVelocityFvPatchVectorField
+    Pressure-driven membrane transport coupled to salt osmotic pressure.
+    The paired faces must be coincident, equal-area, opposite-normal faces in
+    one patch, and must stay together under MPI decomposition.
 
-    this boundary condition is designed to simulate a membrane 
-    across which the velocity is set by the pressure difference calculated 
-    from the previous timestep. The concentration can also be set. The full 
-    boundary condition set up with typical values is given below:
+    Example in 0/U:
+    membrane
     {
-        type 	explicitROmembraneVelocity;
-        value	uniform (0 0 0);// initialisation value
-        K	2e-10;		// K coefficient
-        m_A	none;		// field of concentration in moles (can be set
-                                // to "none" or left out if the osmotic 
-                                // pressure is not to taken into account
+        type explicitROmembraneVelocity;
+        K 1.222222222222e-12;
+        m_A m_A;
+        value uniform (0 0 0);
     }
-    Density changes across the membrane are taken into account.
 
-    The values of hydrodynamic pressure do not take gravity explicitly into 
-    account, so it is assumed that the membrane has a thickness of zero.
- 
+    This patch-local K is water permeability [m/(Pa s)]. It is not the FO
+    support resistance K [s/m]. p is pressure [Pa] at zero gravity and m_A
+    is salt mass fraction [kg/kg]. The normal upstream velocity is
+    K*(delta(p) - pi_mACoeff*delta(m_A)); downstream velocity is density-scaled
+    to conserve mass. m_A none disables the osmotic correction.
+    Nonzero-gravity pressure reconstruction needs separate validation.
+
 SourceFiles
     explicitROmembraneVelocityFvPatchVectorField.C
 
