@@ -29,6 +29,7 @@ License
 #include "fvPatchFieldMapper.H"
 #include "volFields.H"
 #include "surfaceFields.H"
+#include "membraneFaceMapping.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -80,6 +81,8 @@ Foam::explicitROmembraneVelocityFvPatchVectorField::explicitROmembraneVelocityFv
     rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
     fm_(p.size())
 {
+    if (!(K_ >= 0))
+        FatalIOErrorInFunction(dict) << "Water permeability K must be nonnegative" << exit(FatalIOError);
     if (dict.found("value"))
     {
         fvPatchField<vector>::operator=
@@ -162,6 +165,7 @@ void Foam::explicitROmembraneVelocityFvPatchVectorField::autoMap
 )
 {
     fixedValueFvPatchVectorField::autoMap(m);
+    calcFaceMapping();
 }
 
 
@@ -172,6 +176,7 @@ void Foam::explicitROmembraneVelocityFvPatchVectorField::rmap
 )
 {
     fixedValueFvPatchVectorField::rmap(pvf, addr);
+    calcFaceMapping();
 }
 
 
@@ -229,8 +234,8 @@ void Foam::explicitROmembraneVelocityFvPatchVectorField::updateCoeffs()
 void Foam::explicitROmembraneVelocityFvPatchVectorField::write(Ostream& os) const
 {
     fvPatchVectorField::write(os);
-    writeEntryIfDifferent<word>(os, "p", "p", pName_);
-    writeEntryIfDifferent<word>(os, "m_A", "m_A", m_AName_);
+    os.writeEntry("p", pName_);
+    os.writeEntry("m_A", m_AName_);
     os.writeKeyword("K") << K_ << token::END_STATEMENT << nl;
 //    os.writeKeyword("pi_mACoeff") << pi_mACoeff_.value() << token::END_STATEMENT << nl;
 //    os.writeKeyword("rho0") << rho0_ << token::END_STATEMENT << nl;
@@ -242,26 +247,7 @@ void Foam::explicitROmembraneVelocityFvPatchVectorField::write(Ostream& os) cons
 
 void Foam::explicitROmembraneVelocityFvPatchVectorField::calcFaceMapping()
 {
-    // set up the face-index mapping based on cell centres
-    const vectorField& cfvf = patch().Cf();
-    forAll(cfvf, facei)
-    {
-        for(label i=0; i<cfvf.size(); i++)
-        {
-            if (facei!=i)
-            {
-                if (mag(cfvf[facei]-cfvf[i])<1e-9)
-                {
-                    fm_[facei]=i;
-                    if (debug)
-                    {
-                        Info << "patch face " << facei << " -> " << i << endl;
-                    }
-                    break;
-                }
-            }
-        }
-    }
+    membraneFaceMapping(patch(), fm_);
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
