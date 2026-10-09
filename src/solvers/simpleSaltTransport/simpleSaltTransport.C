@@ -39,7 +39,9 @@ Description
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-#include "simpleControl.H"
+#include "membraneSimpleControl.H"
+#include "../membraneSaltAudit.H"
+#include "constrainHbyA.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -50,9 +52,18 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
     #include "readGravitationalAcceleration.H"
 
-    simpleControl simple(mesh);
+    membraneSimpleControl simple(mesh);
 
     #include "createFields.H"
+
+    simple.setSaltCheck([&]()
+    {
+        const auto saltFlux = membraneSaltFlux
+        (
+            mesh, phi, m_A, rho, D_AB_Coeff, D_AB_mACoeff, D_AB_Min
+        );
+        return relativeMembraneSaltImbalance(saltFlux(), U);
+    });
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -75,6 +86,9 @@ int main(int argc, char *argv[])
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;
     }
+
+    runTime.writeNow();
+    #include "../membraneDiagnostics.H"
 
     Info<< "End\n" << endl;
 

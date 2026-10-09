@@ -26,13 +26,14 @@
     surfaceScalarField rAUf = temp1();
     
     // Calculate phiU
-    U = rAU*UEqn().H();
+    // Preserve prescribed membrane/inlet velocities on the pressure predictor.
+    volVectorField HbyA(constrainHbyA(rAU*UEqn().H(), U, p));
     surfaceScalarField phiU
     (
         "phiU",
         fvc::interpolate(rho) *
         (
-            fvc::interpolate(U) & mesh.Sf()
+            fvc::interpolate(HbyA) & mesh.Sf()
         )
     );
     
@@ -62,7 +63,13 @@
     p.relax();
 
     // Update velocity BCs
-    U += rAU/rho*fvc::reconstruct((phi - phiU)/rAUf);
+    // Use relaxed pressure in the velocity corrector. Reconstructing from
+    // the unrelaxed pressure flux made the old pressure relaxation ineffective.
+    U = HbyA - rAU*
+    (
+        fvc::grad(p)
+      + fvc::reconstruct(ghf*fvc::snGrad(rho)*mesh.magSf())
+    );
     U.correctBoundaryConditions();
 
 }

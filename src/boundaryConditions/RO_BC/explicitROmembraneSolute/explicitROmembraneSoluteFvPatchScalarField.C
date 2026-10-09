@@ -29,6 +29,7 @@ License
 #include "fvPatchFieldMapper.H"
 #include "volFields.H"
 #include "surfaceFields.H"
+#include "membraneFaceMapping.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -64,10 +65,10 @@ explicitROmembraneSoluteFvPatchScalarField::explicitROmembraneSoluteFvPatchScala
     rho0_(transProps_.lookup("rho0")),
     rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
     fm_(p.size()),
-    VIC_(p.size()),
-    VBC_(p.size()),
-    GIC_(p.size()),
-    GBC_(p.size())
+    VIC_(p.size(), 1),
+    VBC_(p.size(), 0),
+    GIC_(p.size(), 0),
+    GBC_(p.size(), 0)
 {
     calcFaceMapping();
 }
@@ -101,10 +102,10 @@ explicitROmembraneSoluteFvPatchScalarField::explicitROmembraneSoluteFvPatchScala
     rho0_(empsf.rho0_),
     rho_mACoeff_(empsf.rho_mACoeff_),
     fm_(p.size()),
-    VIC_(p.size()),
-    VBC_(p.size()),
-    GIC_(p.size()),
-    GBC_(p.size())
+    VIC_(p.size(), 1),
+    VBC_(p.size(), 0),
+    GIC_(p.size(), 0),
+    GBC_(p.size(), 0)
 {}
 
 explicitROmembraneSoluteFvPatchScalarField::explicitROmembraneSoluteFvPatchScalarField
@@ -135,11 +136,13 @@ explicitROmembraneSoluteFvPatchScalarField::explicitROmembraneSoluteFvPatchScala
     rho0_(transProps_.lookup("rho0")),
     rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
     fm_(p.size()),
-    VIC_(p.size()),
-    VBC_(p.size()),
-    GIC_(p.size()),
-    GBC_(p.size())
+    VIC_(p.size(), 1),
+    VBC_(p.size(), 0),
+    GIC_(p.size(), 0),
+    GBC_(p.size(), 0)
 {
+    if (!(R_ >= 0 && R_ <= 1))
+        FatalIOErrorInFunction(dict) << "R must be between zero and one" << exit(FatalIOError);
     if (dict.found("value"))
     {
         fvPatchField<scalar>::operator=
@@ -171,10 +174,10 @@ explicitROmembraneSoluteFvPatchScalarField::explicitROmembraneSoluteFvPatchScala
     rho0_(empsf.rho0_),
     rho_mACoeff_(empsf.rho_mACoeff_),
     fm_(empsf.fm_),
-    VIC_(empsf.size()),
-    VBC_(empsf.size()),
-    GIC_(empsf.size()),
-    GBC_(empsf.size())
+    VIC_(empsf.size(), 1),
+    VBC_(empsf.size(), 0),
+    GIC_(empsf.size(), 0),
+    GBC_(empsf.size(), 0)
 {}
 
 explicitROmembraneSoluteFvPatchScalarField::explicitROmembraneSoluteFvPatchScalarField
@@ -193,10 +196,10 @@ explicitROmembraneSoluteFvPatchScalarField::explicitROmembraneSoluteFvPatchScala
     rho0_(empsf.rho0_),
     rho_mACoeff_(empsf.rho_mACoeff_),
     fm_(empsf.fm_),
-    VIC_(empsf.size()),
-    VBC_(empsf.size()),
-    GIC_(empsf.size()),
-    GBC_(empsf.size())
+    VIC_(empsf.size(), 1),
+    VBC_(empsf.size(), 0),
+    GIC_(empsf.size(), 0),
+    GBC_(empsf.size(), 0)
 {}
 
 
@@ -208,6 +211,11 @@ void explicitROmembraneSoluteFvPatchScalarField::autoMap
 )
 {
     fvPatchField<scalar>::autoMap(m);
+    VIC_.setSize(size(), 1);
+    VBC_.setSize(size(), 0);
+    GIC_.setSize(size(), 0);
+    GBC_.setSize(size(), 0);
+    calcFaceMapping();
 }
 
 
@@ -218,6 +226,11 @@ void explicitROmembraneSoluteFvPatchScalarField::rmap
 )
 {
     fvPatchField<scalar>::rmap(psf, addr);
+    VIC_.setSize(size(), 1);
+    VBC_.setSize(size(), 0);
+    GIC_.setSize(size(), 0);
+    GBC_.setSize(size(), 0);
+    calcFaceMapping();
 }
 
 
@@ -251,10 +264,15 @@ void explicitROmembraneSoluteFvPatchScalarField::updateCoeffs()
             // in order to linearise the boundary condition
             scalar D_AB = max(D_AB_Coeff_*(1.0-D_AB_mACoeff_*operator[](facei)),D_AB_Min_).value();
 
+            if (magU[facei]*R_*deltas[facei] >= D_AB)
+                FatalErrorInFunction << "Unresolved RO boundary layer on face " << facei
+                    << ": refine the wall-normal mesh (U_n*R*delta/D must be < 1)"
+                    << exit(FatalError);
+
             // upstream side (flow is directed out of the adjacent cell)
             VIC_[facei] = 1.0 / (1.0 - magU[facei]*R_*deltas[facei]/D_AB);
             VBC_[facei] = 0.0;
-            GIC_[facei] = -1.0 / (-D_AB/magU[facei]/R_ + deltas[facei]);
+            GIC_[facei] = magU[facei]*R_ / (D_AB - magU[facei]*R_*deltas[facei]);
             GBC_[facei] = 0.0;
         }
         else
@@ -263,9 +281,9 @@ void explicitROmembraneSoluteFvPatchScalarField::updateCoeffs()
 
             // downstream side (flow is directed into the adjacent cell)
             VIC_[facei] = 1.0 / (1.0 + magU[facei]*deltas[facei]/D_AB);
-            VBC_[facei] = (1.0-R_)*operator[](fm_[facei]) / (1.0 + D_AB/magU[facei]/deltas[facei]);
-            GIC_[facei] = -1.0 / (D_AB/magU[facei] + deltas[facei]);
-            GBC_[facei] = (1.0-R_)*operator[](fm_[facei]) / (D_AB/magU[facei] + deltas[facei]);
+            VBC_[facei] = (1.0-R_)*operator[](fm_[facei])*magU[facei]*deltas[facei] / (D_AB + magU[facei]*deltas[facei]);
+            GIC_[facei] = -magU[facei] / (D_AB + magU[facei]*deltas[facei]);
+            GBC_[facei] = (1.0-R_)*operator[](fm_[facei])*magU[facei] / (D_AB + magU[facei]*deltas[facei]);
         }
     }
 }
@@ -314,7 +332,7 @@ tmp<Field<scalar> > explicitROmembraneSoluteFvPatchScalarField::gradientBoundary
 void explicitROmembraneSoluteFvPatchScalarField::write(Ostream& os) const
 {
     fvPatchScalarField::write(os);
-    writeEntryIfDifferent<word>(os, "U", "U", UName_);
+    os.writeEntry("U", UName_);
     os.writeKeyword("R") << R_ << token::END_STATEMENT << nl;
 
     this->writeEntry("value", os);
@@ -323,26 +341,7 @@ void explicitROmembraneSoluteFvPatchScalarField::write(Ostream& os) const
 
 void explicitROmembraneSoluteFvPatchScalarField::calcFaceMapping()
 {
-    // set up the face-index mapping based on cell centres
-    const vectorField& cfvf = patch().Cf();
-    forAll(cfvf, facei)
-    {
-        for(label i=0; i<cfvf.size(); i++)
-        {
-            if (facei!=i)
-            {
-                if (mag(cfvf[facei]-cfvf[i])<1e-9)
-                {
-                    fm_[facei]=i;
-                    if(debug)
-                    {
-                        Info << "patch face " << facei << " -> " << i << endl;
-                    }
-                    break;
-                }
-            }
-        }
-    }
+    membraneFaceMapping(patch(), fm_);
 }
 
 makePatchTypeField

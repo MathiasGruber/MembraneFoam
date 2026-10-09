@@ -29,6 +29,7 @@ License
 #include "fvPatchFieldMapper.H"
 #include "volFields.H"
 #include "surfaceFields.H"
+#include "membraneFaceMapping.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -67,10 +68,10 @@ explicitFOmembraneSoluteFvPatchScalarField::explicitFOmembraneSoluteFvPatchScala
     rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
     pi_mACoeff_(transProps_.lookup("pi_mACoeff")),
     fm_(p.size()),
-    VIC_(p.size()),
-    VBC_(p.size()),
-    GIC_(p.size()),
-    GBC_(p.size()),
+    VIC_(p.size(), 1),
+    VBC_(p.size(), 0),
+    GIC_(p.size(), 0),
+    GBC_(p.size(), 0),
     curTimeIndex_(-1)
 {
     calcFaceMapping();
@@ -107,10 +108,10 @@ explicitFOmembraneSoluteFvPatchScalarField::explicitFOmembraneSoluteFvPatchScala
     rho_mACoeff_(transProps_.lookup("rho_mACoeff")),
     pi_mACoeff_(transProps_.lookup("pi_mACoeff")),
     fm_(p.size()),
-    VIC_(p.size()),
-    VBC_(p.size()),
-    GIC_(p.size()),
-    GBC_(p.size()),
+    VIC_(p.size(), 1),
+    VBC_(p.size(), 0),
+    GIC_(p.size(), 0),
+    GBC_(p.size(), 0),
     curTimeIndex_(-1)
 {
     if (dict.found("value"))
@@ -163,12 +164,13 @@ explicitFOmembraneSoluteFvPatchScalarField::explicitFOmembraneSoluteFvPatchScala
     rho_mACoeff_(empsf.rho_mACoeff_),
     pi_mACoeff_(empsf.pi_mACoeff_),
     fm_(p.size()),
-    VIC_(p.size()),
-    VBC_(p.size()),
-    GIC_(p.size()),
-    GBC_(p.size()),
+    VIC_(p.size(), 1),
+    VBC_(p.size(), 0),
+    GIC_(p.size(), 0),
+    GBC_(p.size(), 0),
     curTimeIndex_(-1)
 {
+    calcFaceMapping();
 }
 
 
@@ -191,10 +193,10 @@ explicitFOmembraneSoluteFvPatchScalarField::explicitFOmembraneSoluteFvPatchScala
     rho_mACoeff_(empsf.rho_mACoeff_),
     pi_mACoeff_(empsf.pi_mACoeff_),
     fm_(empsf.fm_),
-    VIC_(empsf.size()),
-    VBC_(empsf.size()),
-    GIC_(empsf.size()),
-    GBC_(empsf.size()),
+    VIC_(empsf.size(), 1),
+    VBC_(empsf.size(), 0),
+    GIC_(empsf.size(), 0),
+    GBC_(empsf.size(), 0),
     curTimeIndex_(-1)
 {}
 
@@ -217,10 +219,10 @@ explicitFOmembraneSoluteFvPatchScalarField::explicitFOmembraneSoluteFvPatchScala
     rho_mACoeff_(empsf.rho_mACoeff_),
     pi_mACoeff_(empsf.pi_mACoeff_),
     fm_(empsf.fm_),
-    VIC_(empsf.size()),
-    VBC_(empsf.size()),
-    GIC_(empsf.size()),
-    GBC_(empsf.size()),
+    VIC_(empsf.size(), 1),
+    VBC_(empsf.size(), 0),
+    GIC_(empsf.size(), 0),
+    GBC_(empsf.size(), 0),
     curTimeIndex_(-1)
 {}
 
@@ -233,6 +235,12 @@ void explicitFOmembraneSoluteFvPatchScalarField::autoMap
 )
 {
     fvPatchField<scalar>::autoMap(m);
+    VIC_.setSize(size(), 1);
+    VBC_.setSize(size(), 0);
+    GIC_.setSize(size(), 0);
+    GBC_.setSize(size(), 0);
+    curTimeIndex_ = -1;
+    calcFaceMapping();
 }
 
 
@@ -243,6 +251,12 @@ void explicitFOmembraneSoluteFvPatchScalarField::rmap
 )
 {
     fvPatchField<scalar>::rmap(psf, addr);
+    VIC_.setSize(size(), 1);
+    VBC_.setSize(size(), 0);
+    GIC_.setSize(size(), 0);
+    GBC_.setSize(size(), 0);
+    curTimeIndex_ = -1;
+    calcFaceMapping();
 }
 
 
@@ -272,13 +286,12 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
         const fvPatchField<vector>& upvf = patch().lookupPatchField<volVectorField, vector>(UName_);
         
         // Velocity field
-        // OpenFoam 2.2 and below: scalarField magU = max( mag( cmptMultiply(upvf,vfnf) ), VSMALL );
-        tmp<scalarField> temp1 = max( mag( cmptMultiply(upvf,vfnf) ), VSMALL );
+        // OpenFoam 2.2 and below: scalarField magU = max( mag(upvf & vfnf), VSMALL );
+        tmp<scalarField> temp1 = max( mag(upvf & vfnf), VSMALL );
         const scalarField magU = temp1();
 
         /* Used in test of BCs. Only strictly required for debugging */
-        const fvPatchScalarField& m_A = patch().lookupPatchField<volScalarField, scalar>("m_A");
-        tmp<scalarField> temp2 = m_A.patchInternalField();
+        tmp<scalarField> temp2 = this->patchInternalField();
         const scalarField& m_AInternal = temp2();
 
         // Total salt flux and area
@@ -311,12 +324,12 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
             {
                 // Variable B and salt flux:
                 B  = rho*magU[facei];
-                Js = ( B_ * magU[facei] ) / ( pi_mACoeff_.value() / 1000 * A_ );
+                Js = -( B_ * max(magU[facei], magU[fm_[facei]]) ) / ( pi_mACoeff_.value() / 1000 * A_ );
 
                 // Set coefficients            
                 VIC_[facei] = 1.0 / (1.0 + B*deltas[facei]/A);
                 VBC_[facei] = Js / (A/deltas[facei] + B);
-                GIC_[facei] = -1.0 / (A/B + deltas[facei]);
+                GIC_[facei] = -B / (A + B*deltas[facei]);
                 GBC_[facei] = Js/( A + B*deltas[facei] );  
 
                 /* Debugging:
@@ -330,12 +343,12 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
             {
                 // Variable B and salt flux:
                 B  = -rho*magU[facei];
-                Js = ( B_ * magU[facei] ) / ( pi_mACoeff_.value() / 1000 * A_ );
+                Js = ( B_ * max(magU[facei], magU[fm_[facei]]) ) / ( pi_mACoeff_.value() / 1000 * A_ );
            
                 // Set coefficients            
                 VIC_[facei] = 1.0 / (1.0 + B*deltas[facei]/A);
                 VBC_[facei] = Js / (A/deltas[facei] + B);
-                GIC_[facei] = -1.0 / (A/B + deltas[facei]);
+                GIC_[facei] = -B / (A + B*deltas[facei]);
                 GBC_[facei] = Js/( A + B*deltas[facei] );  
 
                 /* Debugging:
@@ -351,7 +364,8 @@ void explicitFOmembraneSoluteFvPatchScalarField::updateCoeffs()
             
         }
 
-        totalArea = sum(patch().magSf()) / 2;
+        totalArea = max(gSum(patch().magSf()) / 2, VSMALL);
+        reduce(totalWeightFlux, sumOp<scalar>());
 
         Info << "Salt Flux: "
              << (totalWeightFlux*1e3*3600/totalArea) << " g/(h*m2) " 
@@ -407,8 +421,8 @@ tmp<Field<scalar> > explicitFOmembraneSoluteFvPatchScalarField::gradientBoundary
 void explicitFOmembraneSoluteFvPatchScalarField::write(Ostream& os) const
 {
     fvPatchScalarField::write(os);
-    writeEntryIfDifferent<word>(os, "U", "U", UName_);
-    writeEntryIfDifferent<word>(os, "m_A", "m_A", UName_);
+    os.writeEntry("U", UName_);
+
 
     this->writeEntry("value", os);
 }
@@ -416,26 +430,7 @@ void explicitFOmembraneSoluteFvPatchScalarField::write(Ostream& os) const
 
 void explicitFOmembraneSoluteFvPatchScalarField::calcFaceMapping()
 {
-    // set up the face-index mapping based on cell centres
-    const vectorField& cfvf = patch().Cf();
-    forAll(cfvf, facei)
-    {
-        for(label i=0; i<cfvf.size(); i++)
-        {
-            if (facei!=i)
-            {
-                if (mag(cfvf[facei]-cfvf[i])<1e-9)
-                {
-                    fm_[facei]=i;
-                    if(debug)
-                    {
-                        Info << "patch face " << facei << " -> " << i << endl;
-                    }
-                    break;
-                }
-            }
-        }
-    }
+    membraneFaceMapping(patch(), fm_);
 }
 
 makePatchTypeField
