@@ -1,0 +1,11 @@
+EXE_INC = \
+    -I$(LIB_SRC)/finiteVolume/lnInclude \
+    -I$(AMGX_SOURCE)/include \
+    -I$(CUDA_HOME)/include
+
+LIB_LIBS = \
+    -L$(AMGX_BUILD) \
+    -L$(CUDA_HOME)/lib64 \
+    -Wl,-rpath,$(AMGX_BUILD) \
+    -Wl,-rpath,$(CUDA_HOME)/lib64 \
+    -lamgxsh -lcudart -lfiniteVolume -lOpenFOAM

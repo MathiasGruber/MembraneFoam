@@ -27,18 +27,19 @@ Application
 Description
     Steady-state SIMPLE solver for soluble salt transport in a fluid.
 
-    The solver assumes the process is isothermal and uses a weakly 
-    compressible solution technique. The density is solely a function of the 
+    The solver assumes the process is isothermal and uses a weakly
+    compressible solution technique. The density is solely a function of the
     solute mass fraction and is calculated explicitly.
 
     The current model does not include a turbulence model as the standard
-    compressible models require more sophisticated energy treatments. The 
+    compressible models require more sophisticated energy treatments. The
     incompressible turbulence models are not used as the density variation is
     significant enough that a weakly-compressible formulation is required.
 
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
+#include <cmath>
 #include "membraneSimpleControl.H"
 #include "../membraneSaltAudit.H"
 #include "constrainHbyA.H"

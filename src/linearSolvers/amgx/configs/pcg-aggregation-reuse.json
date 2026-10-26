@@ -1,0 +1,32 @@
+{
+  "config_version": 2,
+  "solver": {
+    "solver": "PCG",
+    "scope": "main",
+    "max_iters": 300,
+    "monitor_residual": 1,
+    "convergence": "RELATIVE_INI",
+    "tolerance": 0.01,
+    "norm": "L2",
+    "preconditioner": {
+      "solver": "AMG",
+      "scope": "amg",
+      "algorithm": "AGGREGATION",
+      "selector": "SIZE_4",
+      "smoother": "BLOCK_JACOBI",
+      "presweeps": 2,
+      "postsweeps": 2,
+      "relaxation_factor": 0.75,
+      "coarse_solver": "DENSE_LU_SOLVER",
+      "min_coarse_rows": 32,
+      "max_levels": 50,
+      "max_iters": 1,
+      "cycle": "V",
+      "print_grid_stats": 0,
+      "structure_reuse_levels": -1
+    },
+    "print_grid_stats": 0,
+    "print_solve_stats": 0,
+    "obtain_timings": 0
+  }
+}
