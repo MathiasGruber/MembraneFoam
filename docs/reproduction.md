@@ -10,7 +10,7 @@ material inputs, spatial schemes, refinement and acceptance criteria.
 | [2016 CF042](#2016-chamber-dimensions) | Reconstructed and recovered-toolkit geometries; matched persistent-coupling grids | Historical inputs and asymptotic validity |
 | [2016 inlets](#2016-inlet-geometry) | Maintained- and effective-source-scheme results, reported separately | Incomplete angle/flow curves and own-grid uncertainty |
 | [2016 spacers](#spacers) | Complete base-grid cylinder count curves and partial triangle curves | Middle-profile gaps, remaining counts and own-grid uncertainty |
-| [High flow](#transient-integration) | Bounded startup and warm-start qualifications | No accepted 60-second settled mean or time-convergence result |
+| [High flow](#transient-integration) | Short-interval transient comparisons | No accepted 60-second settled mean or temporal-convergence result |
 | [Channel verification](#independent-channel-refinement) | Three-grid uniform-channel study | Applies to that channel and operating point |
 
 Useful entry points:
@@ -120,7 +120,7 @@ and +0.01567% from the 1.25× to the 1.5× mesh. The draw-surface concentration 
 Independent CSV integration confirms both membrane areas and integrals on all
 four meshes. Refinement from 1.25× to 1.5× changes the integral by +0.03476%.
 The 1.5× to 2× change is -0.04109% for water flux and
--0.08033%, reversing the previous trend. Using effective
+-0.08033%, giving a non-monotone refinement sequence. Using effective
 spacing proportional to `cells**(-1/3)` and the nonuniform refinement ratios,
 the first three meshes give apparent orders of about 10.2 for water flux and
 9.8 for the draw integral. The fourth mesh does not support extrapolating that
@@ -773,10 +773,9 @@ Run `simpleSaltTransport` and collect without regenerating the dictionaries,
 as in the source-scheme recipe. Acceptance requires every declared residual,
 physical and conservation criterion.
 
-The maintained-scheme 13-inlet case has no accepted result: its salt-equation
-residual plateau is about 5e-9 against a 1e-9 criterion, despite passing the
-salt-balance criterion. Its water diagnostic, 11.747419 kg/(m² h), is excluded
-from the accepted comparison.
+The maintained-scheme 13-inlet configuration has no accepted result:
+its salt residual is about 5e-9 against the required 1e-9. Passing the
+salt-balance criterion alone is insufficient.
 
 At 5 mL/min, the accepted three-inlet, 45° solution gives a water flux of
 9.153626 kg/(m² h) on the 1,066,000-cell grid (salt imbalance 0.09956% of
@@ -802,11 +801,10 @@ To reproduce the same steady problem from fresh initialization, use
 effective-source overrides and PCG/DIC settings in the inlet recipe above,
 then solve and collect without regenerating dictionaries.
 
-The maintained-scheme 10° result is excluded because its relative salt imbalance
-plateaus at 0.001145, above the 0.001 criterion; its water diagnostic is
-12.197 kg/(m² h). No accepted 0° result is available because membrane salt
-concentrations violate physical bounds. These exclusions leave the corresponding
-archived angle points unreproduced.
+The maintained-scheme 10° and 0° configurations have no accepted results:
+the former has relative salt imbalance 0.001145, above the 0.001 criterion;
+the latter violates membrane concentration bounds. The corresponding
+archived angle points remain unreproduced.
 
 These points do not establish grid independence or reproduce
 the complete inlet studies. At 50 mL/min and 45°, the plotter also writes
@@ -1072,146 +1070,111 @@ cannot be assigned to model or paper error from this fit.
 
 ### Source-layout count comparisons
 
-The two-spacer source-layout results use area fraction 0.2 and effective
-source schemes at three inlets, 45° and 50 mL/min. Water units are
-kg/(m² h), salt units g/(m² h):
+These results use three inlets at 45°, 50 mL/min, source-layout spacers,
+area fraction 0.2 and the effective source schemes. Water fluxes are
+kg/(m² h). Middle triangles use the derived source anchor; wall cylinders
+use the corrected equal-area radius. All rows pass the stated residual,
+pressure, physical and conservation criteria. Each count requires its own
+spatial-uncertainty assessment.
 
-| Shape / placement | Cells | Water per active area | Water per nominal area | Salt | Relative salt imbalance |
-|---|---:|---:|---:|---:|---:|
-| Cylinder / Middle | 3,240,400 | 12.651870 | 12.651870 | 8.145797 | 1.35e-10 |
-| Cylinder / Up | 2,923,600 | 12.351672 | 12.351672 | 7.952208 | 1.83e-10 |
-| Cylinder / Down | 2,870,800 | 12.717752 | 12.479785 | 8.188302 | 8.92e-11 |
-| Triangle / Middle, source anchor | 3,353,200 | 12.733226 | 12.733226 | 8.198266 | 2.08e-9 |
-| Triangle / Up | 2,863,600 | 12.369199 | 12.369199 | 7.963519 | 9.57e-12 |
-| Triangle / Down | 2,863,600 | 12.790318 | 12.355692 | 8.235095 | 6.04e-10 |
+Archived values are the authors' Figure 7 numerical plotting inputs. Their
+script labels `Sphere_*` inputs as Cylinder and the `vol` coordinate as
+spacer count. Differences compare computed active-area means with those
+archived means; historical per-case settings and area normalization remain
+unverified. Nominal-area means account for membrane-contact area.
 
-The original Figure 7 plotting inputs provide the following two-spacer
-references. These are numerical tables, rather than values digitized from
-the figure. The author's plotting script labels its `Sphere_*` inputs as
-Cylinder and its `vol` coordinate as the number of spacers. Differences below
-compare computed active-area means with archived plotted means;
-historical per-case area normalization and numerical settings remain unverified.
-
-| Shape / placement | Archived water | Computed difference |
-|---|---:|---:|
-| Cylinder / Middle | 12.35 | +2.444% |
-| Cylinder / Up | 12.2152 | +1.117% |
-| Cylinder / Down | 12.6271 | +0.718% |
-| Cylinder / Changing | 12.63 | +0.695% |
-| Triangle / Middle | 12.3266 | +3.299% |
-| Triangle / Up | 12.2786 | +0.738% |
-| Triangle / Down | 12.6718 | +0.935% |
-| Triangle / Changing | 12.6735 | +0.922% |
-
-At two spacers, Changing has the same geometry as Down for each shape.
-The generator produces byte-identical mesh dictionaries, initial fields and
-material files, so the Down point also represents Changing without a duplicate
-solve. Middle triangle uses the derived −15.245 µm quarter offset. Wall
-cylinders retain the corrected equal-area radius. The Down cylinder and
-triangle leave 98.12886% and 96.60191% of nominal membrane area permeable;
-their active-area means require those factors when comparing module transfer.
-The archived Down and Changing means differ slightly despite that geometric
-equivalence. Their separate historical grids and stopping states are unavailable,
-so the difference does not establish a geometry or paper error.
-
-The six unique two-spacer cases have relative mass imbalance below 3.36e-14.
-Their paired-surface integrals and 100-iteration reference-control stability
-checks satisfy the validation method. Historical wall radii, area normalization
-and each profile's own-grid uncertainty remain unresolved.
-
-The ten-spacer results cover all eight profiles with the same acceptance criteria.
-Water fluxes use kg/(m² h); differences compare active-area means with the
-original Figure 7 plotted values, whose historical normalization remains
-unverified:
-
-| Shape / placement | Cells | Water / active area | Water / nominal area | Archived water | Difference | Relative salt imbalance |
-|---|---:|---:|---:|---:|---:|---:|
-| Cylinder / Middle | 5,150,800 | 13.619648 | 13.619648 | 13.1672 | +3.436% | 3.04e-5 |
-| Cylinder / Up | 3,566,800 | 13.057563 | 13.057563 | 12.9111 | +1.134% | 5.26e-11 |
-| Cylinder / Down | 3,302,800 | 13.322432 | 12.076026 | 13.287 | +0.267% | 2.10e-10 |
-| Cylinder / Changing | 3,408,400 | 13.308904 | 12.561819 | 13.2574 | +0.388% | 7.07e-11 |
-| Triangle / Middle, source anchor | 5,630,800 | 13.793795 | 13.793795 | 13.1356 | +5.011% | 1.03e-5 |
-| Triangle / Up | 3,266,800 | 13.129927 | 13.129927 | 13.0478 | +0.629% | 4.51e-11 |
-| Triangle / Down | 3,266,800 | 13.590000 | 11.280998 | 13.4783 | +0.829% | 2.61e-10 |
-| Triangle / Changing | 3,266,800 | 13.513549 | 12.135942 | 13.3961 | +0.877% | 3.32e-10 |
-
-The ten-spacer cases have relative mass imbalance below 1.63e-13 and water
-span over 100 reference-control iterations below 2.73e-8. The +5.011%
-Middle-triangle difference and membrane-contact area effects remain material;
-these base-grid results do not establish spatial uncertainty.
-
-The eighteen-spacer results use the same criteria for all eight profiles:
-
-| Shape / placement | Cells | Water / active area | Water / nominal area | Archived water | Difference | Relative salt imbalance |
-|---|---:|---:|---:|---:|---:|---:|
-| Cylinder / Middle | 7,027,600 | 14.038153 | 14.038153 | 13.58 | +3.374% | 9.9975e-4 |
-| Cylinder / Up | 4,176,400 | 13.357937 | 13.357937 | 13.3106 | +0.356% | 2.90e-10 |
-| Cylinder / Down | 3,701,200 | 13.287841 | 11.050135 | 13.3664 | −0.588% | 1.75e-10 |
-| Cylinder / Changing | 3,912,400 | 13.559384 | 12.290809 | 13.5281 | +0.231% | 5.10e-10 |
-| Triangle / Middle, source anchor | 7,891,600 | 14.249034 | 14.249034 | 13.5669 | +5.028% | 9.23e-4 |
-| Triangle / Up | 3,636,400 | 13.425216 | 13.425216 | 13.475 | −0.369% | 9.97e-11 |
-| Triangle / Down | 3,636,400 | 13.655721 | 9.479420 | 13.7403 | −0.616% | 5.00e-11 |
-| Triangle / Changing | 3,636,400 | 13.857833 | 11.503326 | 13.7525 | +0.766% | 2.77e-10 |
-
-The eighteen-spacer cases have relative mass imbalance below 1.49e-13 and
-water span over 100 reference-control iterations below 2.12e-7. The
-Middle-triangle gap is +5.028%; Down-triangle active and nominal means differ
-by 30.58% of the active mean. Historical area conventions, physical inputs
-and each profile's grid uncertainty remain unresolved.
-
-Cylinder counts 4, 8, 12, 14 and 16 cover all four placements with the
-same source layout, area fraction 0.2 and original acceptance gates:
+#### Cylinders
 
 | Count | Placement | Cells | Water / active area | Water / nominal area | Archived water | Difference | Relative salt imbalance |
-|---|---|---:|---:|---:|---:|---:|---:|
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 2 | Middle | 3,240,400 | 12.651870 | 12.651870 | 12.35 | +2.444% | 1.35e-10 |
+| 2 | Up | 2,923,600 | 12.351672 | 12.351672 | 12.2152 | +1.117% | 1.83e-10 |
+| 2 | Down | 2,870,800 | 12.717752 | 12.479785 | 12.6271 | +0.718% | 8.92e-11 |
+| 2 | Changing | 2,870,800 | 12.717752 | 12.479785 | 12.63 | +0.695% | 8.92e-11 |
 | 4 | Middle | 3,718,000 | 13.018624 | 13.018624 | 12.6339 | +3.045% | 3.93e-07 |
 | 4 | Up | 3,084,400 | 12.598352 | 12.598352 | 12.4365 | +1.301% | 2.84e-05 |
 | 4 | Down | 2,978,800 | 13.009723 | 12.522863 | 12.9313 | +0.606% | 2.22e-05 |
 | 4 | Changing | 3,031,600 | 12.804835 | 12.565239 | 12.72 | +0.667% | 2.70e-05 |
+| 6 | Middle | 4,162,000 | 13.271754 | 13.271754 | 12.8453 | +3.320% | 0.00099858 |
+| 6 | Up | 3,211,600 | 12.783960 | 12.783960 | 12.6185 | +1.311% | 0.00099903 |
+| 6 | Down | 3,053,200 | 13.162448 | 12.423585 | 13.1047 | +0.441% | 0.00099868 |
+| 6 | Changing | 3,106,000 | 13.084957 | 12.595282 | 13.027 | +0.445% | 0.00099769 |
 | 8 | Middle | 4,673,200 | 13.461770 | 13.461770 | 13.019 | +3.401% | 9.00e-06 |
 | 8 | Up | 3,406,000 | 12.922559 | 12.922559 | 12.7744 | +1.160% | 2.79e-05 |
 | 8 | Down | 3,194,800 | 13.262311 | 12.269686 | 13.2144 | +0.363% | 9.29e-07 |
 | 8 | Changing | 3,300,400 | 13.166373 | 12.673650 | 13.1051 | +0.468% | 2.94e-06 |
+| 10 | Middle | 5,150,800 | 13.619648 | 13.619648 | 13.1672 | +3.436% | 3.04e-5 |
+| 10 | Up | 3,566,800 | 13.057563 | 13.057563 | 12.9111 | +1.134% | 5.26e-11 |
+| 10 | Down | 3,302,800 | 13.322432 | 12.076026 | 13.287 | +0.267% | 2.10e-10 |
+| 10 | Changing | 3,408,400 | 13.308904 | 12.561819 | 13.2574 | +0.388% | 7.07e-11 |
 | 12 | Middle | 5,561,200 | 13.755330 | 13.755330 | 13.2941 | +3.469% | 3.22e-05 |
 | 12 | Up | 3,660,400 | 13.175244 | 13.175244 | 13.0357 | +1.070% | 4.82e-05 |
 | 12 | Down | 3,343,600 | 13.349076 | 11.850397 | 13.3331 | +0.120% | 4.58e-05 |
 | 12 | Changing | 3,502,000 | 13.376393 | 12.625520 | 13.3236 | +0.396% | 2.51e-05 |
 | 14 | Middle | 6,038,800 | 13.866022 | 13.866022 | 13.4044 | +3.444% | 2.66e-04 |
 | 14 | Up | 3,821,200 | 13.258821 | 13.258821 | 13.1455 | +0.862% | 4.34e-05 |
-| 14 | Down | 3,451,600 | 13.351839 | 11.603019 | 13.3596 | −0.058% | 4.12e-05 |
+| 14 | Down | 3,451,600 | 13.351839 | 11.603019 | 13.3596 | -0.058% | 4.12e-05 |
 | 14 | Changing | 3,610,000 | 13.454496 | 12.447486 | 13.4116 | +0.320% | 1.27e-05 |
 | 16 | Middle | 6,566,800 | 13.956528 | 13.956528 | 13.5015 | +3.370% | 6.83e-04 |
 | 16 | Up | 4,032,400 | 13.316178 | 13.316178 | 13.2365 | +0.602% | 2.26e-05 |
-| 16 | Down | 3,610,000 | 13.330065 | 11.334672 | 13.3713 | −0.308% | 5.59e-05 |
+| 16 | Down | 3,610,000 | 13.330065 | 11.334672 | 13.3713 | -0.308% | 5.59e-05 |
 | 16 | Changing | 3,821,200 | 13.515203 | 12.503650 | 13.4744 | +0.303% | 1.40e-05 |
+| 18 | Middle | 7,027,600 | 14.038153 | 14.038153 | 13.58 | +3.374% | 9.9975e-4 |
+| 18 | Up | 4,176,400 | 13.357937 | 13.357937 | 13.3106 | +0.356% | 2.90e-10 |
+| 18 | Down | 3,701,200 | 13.287841 | 11.050135 | 13.3664 | -0.588% | 1.75e-10 |
+| 18 | Changing | 3,912,400 | 13.559384 | 12.290809 | 13.5281 | +0.231% | 5.10e-10 |
 
-Relative mass imbalance is below 2.09e-13 and water span over 100 reference-
-control iterations is below 2.21e-7. Middle-cylinder archived gaps range from
-+3.045% to +3.469%; other placements range from −0.308% to +1.301%.
-Each count still requires its own spatial-uncertainty estimate.
-
-Triangle counts 4, 8 and 12 also pass with the same source layout,
-area fraction and gates; Middle uses the derived source anchor:
+#### Triangles
 
 | Count | Placement | Cells | Water / active area | Water / nominal area | Archived water | Difference | Relative salt imbalance |
-|---|---|---:|---:|---:|---:|---:|---:|
+|---:|---|---:|---:|---:|---:|---:|---:|
+| 2 | Middle | 3,353,200 | 12.733226 | 12.733226 | 12.3266 | +3.299% | 2.08e-9 |
+| 2 | Up | 2,863,600 | 12.369199 | 12.369199 | 12.2786 | +0.738% | 9.57e-12 |
+| 2 | Down | 2,863,600 | 12.790318 | 12.355692 | 12.6718 | +0.935% | 6.04e-10 |
+| 2 | Changing | 2,863,600 | 12.790318 | 12.355692 | 12.6735 | +0.922% | 6.04e-10 |
 | 4 | Middle | 3,910,000 | 13.137295 | 13.137295 | 12.5984 | +4.277% | 4.21e-6 |
 | 4 | Up | 2,964,400 | 12.633519 | 12.633519 | 12.5323 | +0.808% | 4.82e-5 |
 | 4 | Down | 2,964,400 | 13.138717 | 12.245786 | 13.0103 | +0.987% | 5.13e-5 |
 | 4 | Changing | 2,964,400 | 12.887482 | 12.449554 | 12.7941 | +0.730% | 4.97e-5 |
+| 6 | Middle | 4,466,800 | 13.412756 | 13.412756 | 12.8102 | +4.704% | 3.86e-9 |
+| 6 | Up | 3,031,600 | 12.836248 | 12.836248 | 12.734 | +0.803% | 0.00099882 |
+| 6 | Down | 3,031,600 | 13.342594 | 11.982415 | 13.2191 | +0.934% | 0.00099915 |
+| 6 | Changing | 3,031,600 | 13.228716 | 12.329669 | 13.1201 | +0.828% | 0.00099699 |
 | 8 | Middle | 5,057,200 | 13.620029 | 13.620029 | 12.9886 | +4.861% | 8.12e-6 |
 | 8 | Up | 3,166,000 | 12.992497 | 12.992497 | 12.9026 | +0.697% | 1.97e-5 |
 | 8 | Down | 3,166,000 | 13.487734 | 11.654433 | 13.3663 | +0.909% | 2.50e-5 |
 | 8 | Changing | 3,166,000 | 13.319219 | 12.414021 | 13.2127 | +0.806% | 2.15e-5 |
+| 10 | Middle | 5,630,800 | 13.793795 | 13.793795 | 13.1356 | +5.011% | 1.03e-5 |
+| 10 | Up | 3,266,800 | 13.129927 | 13.129927 | 13.0478 | +0.629% | 4.51e-11 |
+| 10 | Down | 3,266,800 | 13.590000 | 11.280998 | 13.4783 | +0.829% | 2.61e-10 |
+| 10 | Changing | 3,266,800 | 13.513549 | 12.135942 | 13.3961 | +0.877% | 3.32e-10 |
 | 12 | Middle | 6,137,200 | 13.941602 | 13.941602 | 13.2665 | +5.089% | 1.09e-4 |
 | 12 | Up | 3,300,400 | 13.255145 | 13.255145 | 13.1778 | +0.587% | 4.51e-5 |
 | 12 | Down | 3,300,400 | 13.650951 | 10.867723 | 13.5661 | +0.625% | 5.63e-5 |
 | 12 | Changing | 3,300,400 | 13.587479 | 12.202335 | 13.4756 | +0.830% | 4.99e-5 |
+| 18 | Middle | 7,891,600 | 14.249034 | 14.249034 | 13.5669 | +5.028% | 9.23e-4 |
+| 18 | Up | 3,636,400 | 13.425216 | 13.425216 | 13.475 | -0.369% | 9.97e-11 |
+| 18 | Down | 3,636,400 | 13.655721 | 9.479420 | 13.7403 | -0.616% | 5.00e-11 |
+| 18 | Changing | 3,636,400 | 13.857833 | 11.503326 | 13.7525 | +0.766% | 2.77e-10 |
 
-Relative mass imbalance is below 2.99e-13 and water span over 100 reference-
-control iterations is below 1.81e-7. Middle-triangle archived gaps at counts
-4/8/12 are +4.277%/+4.861%/+5.089%. These base-grid points do not resolve
-their own spatial uncertainty, historical inputs or area normalization.
+At two spacers, Changing and Down have byte-identical geometry, initial fields
+and material dictionaries, so the Down solution supplies both markers.
+The archived Down and Changing means differ slightly; the unavailable
+historical meshes and stopping states prevent attributing that difference
+to geometry. Middle/Up/Down salt fluxes at this count are
+8.145797/7.952208/8.188302 g/(m² h) for cylinders and
+8.198266/7.963519/8.235095 g/(m² h) for triangles.
+The Down cylinder and triangle retain 98.12886% and 96.60191% of nominal
+membrane area, respectively.
+
+Across these count studies, relative mass imbalance is below 9e-13 and
+relative water-flux span over 100 reference-control iterations is below
+4.86e-7. Independent paired-surface integration verifies areas and
+concentration integrals. Base-grid Middle-profile differences are about
+2–5%; the refined N6 results and their uncertainty limits are reported above.
+At eighteen Down triangles, active and nominal means differ by 30.58%
+of the active mean. Historical area conventions and per-case inputs
+remain unresolved.
 
 ![Spacer-count reference comparison](figures/2016-spacers.svg)
 
@@ -1440,37 +1403,53 @@ The collector rejects steady results without reported SIMPLE convergence.
 An unsteady comparison with published steady CFD requires a suitable averaging
 window, temporal convergence and spatial convergence.
 
-### High-flow startup qualification
+### High-flow numerical results and limitations
 
-The startup comparison uses three inlets at 45°, 500 mL/min, no spacers and
-1,066,000 cells over physical time 0–0.0001 s. Numerical controls are four MPI
-ranks, four outer correctors, two non-orthogonal corrections, unrelaxed momentum
-and GAMG/DICGaussSeidel pressure with absolute tolerance 1e-11, relative zero
-and maximum 2,000 iterations. The following configurations satisfy pressure,
-concentration and sampled accumulation-inclusive conservation criteria:
+The high-flow configuration has three inlets at 45°, 500 mL/min, no spacers
+and 1,066,000 cells. Short-interval results use four MPI ranks and the
+[source transient template](https://github.com/MathiasGruber/MembraneSimKit/blob/2c4344144dadc3f2b486432724468a91652bbe3a/src/templatesFiles/fvSchemes_transient):
+central velocity convection, `limitedLinear 1` salt convection and linear
+corrected diffusion. This differs from the effective steady-source schemes.
+Pressure uses GAMG/DICGaussSeidel, absolute tolerance 1e-11, relative zero
+and a maximum of 2,000 iterations. Pressure targets, concentration bounds
+and accumulation-inclusive conservation are checked independently.
 
-| Convection | Step, µs | Maximum Courant number | Maximum relative salt-balance error |
-|---|---:|---:|---:|
-| Maintained | 5 | 0.2504 | 8.96e-6 |
-| Maintained | 10 | 0.4977 | 3.00e-7 |
-| Recovered transient template | 5 | 0.2293 | 1.04e-5 |
-| Recovered transient template | 10 | 0.4496 | 3.28e-7 |
-| Recovered transient template | 25 | 1.0971 | 2.09e-7 |
-| Recovered transient template | 50 | 2.1435 | 2.45e-8 |
+With four outer correctors, two pressure correctors, two non-orthogonal
+corrections and unrelaxed momentum, the 0–1 ms comparison gives:
 
-Maximum sampled relative mass-balance error is below 3.87e-12. The maintained
-convection produces nonphysical salt fields before completing its first step
-at 25 or 50 µs. The recovered
-[transient template](https://github.com/MathiasGruber/MembraneSimKit/blob/2c4344144dadc3f2b486432724468a91652bbe3a/src/templatesFiles/fvSchemes_transient)
-uses central velocity convection, `limitedLinear 1` salt convection and linear
-corrected diffusion. Its settings differ from the effective steady-source
-recipe. To repeat the 50 µs startup test from fresh initialization:
+| Step, µs | Maximum relative salt-balance error | Maximum relative mass-balance error | Water at 1 ms, kg/(m² h) |
+|---:|---:|---:|---:|
+| 25 | 4.72e-7 | 6.41e-12 | 15.3618106342 |
+| 50 | 5.16e-7 | 7.91e-12 | 15.3618321626 |
+
+The endpoint water difference is 1.40e-6 relative; the maximum difference
+at twenty common sample times is 5.83e-6. With the momentum predictor disabled,
+momentum relaxation 0.5 and one pressure corrector, the same interval gives:
+
+| Outer / pressure / non-orthogonal correctors | Step, µs | Maximum Courant number | Maximum relative salt-balance error | Water at 1 ms, kg/(m² h) |
+|---|---:|---:|---:|---:|
+| 2 / 1 / 8 | 100 | 4.9497 | 9.07e-4 | 15.361823057 |
+| 4 / 1 / 2 | 50 | 2.4207 | 4.92e-7 | 15.361831889 |
+| 4 / 1 / 2 | 100 | 4.8898 | 1.42e-7 | 15.361874294 |
+
+Maximum relative mass imbalance is below 1.05e-11. The 4/1/2 pair differs
+by at most 5.65e-6 in relative water flux at ten common sample times.
+The toolkit's [coupling defaults](https://github.com/MathiasGruber/MembraneSimKit/blob/2c4344144dadc3f2b486432724468a91652bbe3a/src/templatesFiles/fvSolution)
+do not establish the settings of any particular published case. At 50 µs
+with 2/1/8 coupling, its pressure tolerances of 1e-7 absolute and 0.1 relative
+satisfy the linear targets but give salt-inventory error 0.00145739,
+exceeding 0.001. Tight pressure gives 0.000873842. Their endpoint water
+fluxes differ by only 1.63e-10 relative, demonstrating that flux agreement
+alone does not verify conservation.
+
+For reproducible short-interval inputs, prepare the 4/1/2, 100 µs configuration:
 
 ```bash
-case=runs/block-highflow-startup
+case=runs/block-highflow
 python3 examples/run.py 3dblock "$case" --inlets 3 --angle 45 --flow 500 \
-    --transient 0.0001 --time-step 0.00005 \
-    --outer-correctors 4 --non-orthogonal-correctors 2 --setup-only
+    --transient 0.001 --time-step 0.0001 --outer-correctors 4 \
+    --pressure-correctors 1 --non-orthogonal-correctors 2 \
+    --no-momentum-predictor --momentum-relaxation 0.5 --setup-only
 foamDictionary "$case/system/fvSchemes" -entry divSchemes -set '{
     default none;
     "div(phi,U)" Gauss linear;
@@ -1502,150 +1481,30 @@ mpirun -np 4 pisoSaltTransport -parallel -case "$case" > "$case/log.solver" 2>&1
 python3 examples/run.py 3dblock "$case" --collect-only
 ```
 
-Use 25 µs for the paired source-template test. To test maintained convection,
-omit both scheme overrides and use 5 or 10 µs. These short tests establish
-startup admissibility for these controls. Agreement at 0.0001 s does not
-establish temporal convergence over a settled averaging window, and these
-records remain excluded from the steady paper figures. The 60-second
-averaging and spacer-resolution studies remain unverified.
+Use 50 µs for the paired comparison, retaining all other controls. The
+25/50 µs pair in the first table instead uses two pressure correctors,
+the momentum predictor and momentum relaxation one.
 
-For the same source-convection initial condition and physical interval 0–1 ms:
+Using the 4/1/2, 100 µs solution at 1 ms as a common initial field,
+the same numerical configuration over 1–11 ms gives:
 
-| Step, µs | Maximum relative salt-balance error | Maximum relative mass-balance error | Water at 1 ms, kg/(m² h) |
+| Step, µs | Maximum relative salt-balance error | Maximum relative mass-balance error | Water at 11 ms, kg/(m² h) |
 |---:|---:|---:|---:|
-| 25 | 4.72e-7 | 6.41e-12 | 15.3618106342 |
-| 50 | 5.16e-7 | 7.91e-12 | 15.3618321626 |
-
-The endpoint water difference is 1.40e-6 relative; the largest difference
-at 20 common sample times is 5.83e-6. Use `--transient 0.001` in the same
-recipe. This interval contains no settled averaging window and does not
-establish time convergence over the paper's averaging duration.
-
-The source-convection comparison holds coupling controls fixed. The toolkit's
-[default configuration](https://github.com/MathiasGruber/MembraneSimKit/blob/2c4344144dadc3f2b486432724468a91652bbe3a/src/memfoam/defaultConfig.py)
-and [solution template](https://github.com/MathiasGruber/MembraneSimKit/blob/2c4344144dadc3f2b486432724468a91652bbe3a/src/templatesFiles/fvSolution)
-instead specify two outer correctors, one pressure corrector, eight
-non-orthogonal corrections, no momentum predictor and momentum relaxation 0.5;
-default pressure tolerances are 1e-7 absolute and 0.1 relative. These defaults
-do not establish the settings used for any particular published case.
-
-For source convection, a disabled momentum predictor, momentum relaxation
-0.5 and absolute pressure tolerance 1e-11, the 0–1 ms results are:
-Coupling counts denote outer/pressure/nonorthogonal correctors.
-
-| Coupling | Step, µs | Maximum Courant number | Maximum relative salt-balance error | Final water, kg/(m² h) |
-|---|---:|---:|---:|---:|
-| 2/1/8 | 100 | 4.9497 | 9.07e-4 | 15.361823057 |
-| 4/1/2 | 50 | 2.4207 | 4.92e-7 | 15.361831889 |
-| 4/1/2 | 100 | 4.8898 | 1.42e-7 | 15.361874294 |
-
-All pressure and sampled inventory criteria pass; maximum relative mass
-imbalance is below 1.05e-11. The 4/1/2 pair has maximum water difference
-5.65e-6 at ten common sample times. At 250 or 500 µs, the 4/1/2 cases
-fail both concentration bounds and pressure qualification, reaching the
-2,000-iteration cap. Eight outer correctors also fail at 500 µs. These tests
-bound admissible startup controls on this mesh; they do not establish a
-settled mean, a later-time step limit or temporal convergence over 60 seconds.
-
-To prepare the qualified 4/1/2, 100 µs alternative, use:
-
-```bash
-case=runs/block-highflow-source100us
-python3 examples/run.py 3dblock "$case" --inlets 3 --angle 45 --flow 500 \
-    --transient 0.001 --time-step 0.0001 --outer-correctors 4 \
-    --pressure-correctors 1 --non-orthogonal-correctors 2 \
-    --no-momentum-predictor --momentum-relaxation 0.5 --setup-only
-```
-
-Apply the source-convection, diffusion, tight-pressure and four-rank
-decomposition blocks above before solving and collecting. Use 50 µs for the
-paired test. Changing these controls requires its own qualification.
-
-With recovered 2/1/8 coupling at 50 µs, source-default pressure settings
-meet all their declared linear targets but fail the 0.001 inventory gate
-(salt error 0.00145739), while tight pressure passes (0.000873842).
-Their final water diagnostics differ by only 1.63e-10 relative. Endpoint-flux
-agreement alone therefore does not verify transient conservation.
-
-### Warm-start qualification through 11 ms
-
-The warm-start comparison uses the 4/1/2, 100 µs state at physical time
-1 ms as its common initial condition, with the same geometry, materials and
-spatial operators. The physical interval is 1–11 ms:
-
-| Step, µs | Completed steps | Maximum relative salt-balance error | Maximum relative mass-balance error | Final water, kg/(m² h) |
-|---|---:|---:|---:|---:|
-| 500 | 20 | 2.643e-4 | 2.509e-10 | 15.2832067282 |
-| 1,000 | 10 | 1.436e-5 | 4.716e-11 | 15.2834190205 |
+| 500 | 2.643e-4 | 2.509e-10 | 15.2832067282 |
+| 1,000 | 1.436e-5 | 4.716e-11 | 15.2834190205 |
 
 Pressure targets and concentration bounds pass at every completed step.
-Maximum water difference at ten common sample times is 3.83e-5 relative.
-Final area-weighted relative L2 differences are 0.0471%/0.0929% for draw/feed mass fraction and
-0.0273%/0.0294% for draw/feed normal velocity.
+The maximum relative water difference at ten common sample times is
+3.83e-5. Final area-weighted relative L2 differences are 0.0471%/0.0929%
+for draw/feed mass fraction and 0.0273%/0.0294% for normal velocity.
+Smaller steps do not consistently satisfy physical and inventory criteria
+on this mesh, so the passing pair does not establish temporal convergence
+or a monotone step-size limit.
 
-The finer 100 µs restart fails after 8.4 ms with negative membrane-feed mass
-fractions. The 250 µs restart reaches 11 ms with physical fields and accurate
-pressure solves, but salt-balance error 0.04669 fails the 0.001 gate. Thus
-the passing larger steps do not establish temporal convergence or a monotone
-step-size admissibility limit. These short startup trajectories have no
-settled averaging window or spatial qualification, and do not reproduce the
-paper's steady-first, minute-long transient check.
-
-For a physically bounded, unconverged steady field at SIMPLE iteration 1620,
-a zeroed physical clock and the same 4/1/2 coupling and material/spatial
-dictionaries give these results. The initial field does not satisfy the
-steady salt-conservation criterion:
-
-| Step | Last completed physical time | Failed criterion |
-|---|---:|---|
-| 250 µs | 11.75 ms | Pressure accuracy and concentration bounds |
-| 500 µs | 21.5 ms | Pressure accuracy and concentration bounds |
-| 1 ms | 36 ms | Membrane concentration bounds |
-| 5 ms | 0 | Pressure accuracy and concentration bounds |
-| 10 ms | 0 | Pressure accuracy and concentration bounds |
-
-The 250 and 500 µs cases fail pressure accuracy at the 2,000-iteration cap.
-The 1 ms case satisfies pressure accuracy but fails concentration bounds.
-No listed step gives an admissible 100 ms result or a settled mean. The
-nonmonotone failure times prevent a time-convergence claim and do not establish
-that a physical steady state cannot exist. Results from this unconverged
-initial condition cannot be combined with the qualified startup comparison.
-
-To reproduce the 1–11 ms warm-start comparison, use the qualified 1 ms
-source state in a separate case directory:
-
-```bash
-case=runs/block-highflow-source100us
-warm=runs/block-highflow-warm500us
-cp -a "$case" "$warm"
-foamDictionary "$warm/system/controlDict" -entry startFrom -set startTime
-foamDictionary "$warm/system/controlDict" -entry startTime -set 0.001
-foamDictionary "$warm/system/controlDict" -entry endTime -set 0.011
-foamDictionary "$warm/system/controlDict" -entry deltaT -set 0.0005
-foamDictionary "$warm/system/controlDict" -entry writeInterval -set 1
-python3 - "$warm" "$case" <<'PY'
-import json
-import sys
-from pathlib import Path
-case = Path(sys.argv[1])
-for rank in range(4):
-    assert all((case / f"processor{rank}" / "0.001" / field).is_file()
-               for field in ("p", "U", "m_A", "phi"))
-path = case / "case.json"
-data = json.loads(path.read_text())
-assert data["end_time_s"] == 0.001
-data.update(start_time_s=0.001, end_time_s=0.011, time_step_s=0.0005,
-            restart_source_case=sys.argv[2], restart_source_time_s=0.001)
-data["qualification_scope"] = "Warm 1–11 ms qualification only; no settled mean"
-path.write_text(json.dumps(data, indent=2) + "\n")
-PY
-mpirun -np 4 pisoSaltTransport -parallel -case "$warm" >> "$warm/log.solver" 2>&1
-python3 examples/run.py 3dblock "$warm" --collect-only
-```
-
-For logs with multiple solver sessions, collection selects the final session.
-For the paired 1,000 µs comparison, use a new directory and change both step entries
-to 0.001. Keep all physical, pressure and accumulation-inclusive gates.
+These intervals contain no settled averaging window. No accepted 60-second
+high-flow mean, temporal-convergence study or spatially qualified high-flow
+comparison is available. The results cannot establish that a physical steady
+state is absent and are excluded from the steady paper figures.
 
 ## Independent channel refinement
 
