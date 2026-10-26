@@ -1,0 +1,14 @@
+#!/bin/sh
+# Optional single-GPU linear solver; run in the selected OpenFOAM environment.
+set -eu
+cd "$(dirname "$0")"
+: "${WM_PROJECT_DIR:?Source OpenFOAM v2606 before building}"
+: "${AMGX_SOURCE:?Set AMGX_SOURCE to the AmgX source directory}"
+: "${AMGX_BUILD:?Set AMGX_BUILD to the directory containing libamgxsh.so}"
+: "${CUDA_HOME:?Set CUDA_HOME to the compiler-compatible CUDA toolkit}"
+[ "${WM_PRECISION_OPTION:-}" = DP ] || { echo "AmgX requires WM_PRECISION_OPTION=DP" >&2; exit 1; }
+[ "${WM_LABEL_SIZE:-}" = 32 ] || { echo "AmgX requires WM_LABEL_SIZE=32" >&2; exit 1; }
+[ -f "$AMGX_SOURCE/include/amgx_c.h" ]
+[ -f "$AMGX_BUILD/libamgxsh.so" ]
+[ -f "$CUDA_HOME/include/cuda_runtime.h" ]
+wmake libso

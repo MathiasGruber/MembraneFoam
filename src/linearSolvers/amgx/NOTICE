@@ -1,0 +1,12 @@
+The AmgX adapter derives from openfoam-amgx by tasdingchen-alt,
+revision f08d88ce8e63e4b35f9f05eef11f320c4d8ad183:
+https://github.com/tasdingchen-alt/openfoam-amgx
+
+The original GPL-3.0-or-later notices are retained in the derived files.
+Modifications provide OpenCFD API compatibility, serial GPU coefficient
+updates, precision-correct buffers, double-precision residual correction,
+configuration-aware caching and mesh-scoped resource ownership.
+
+This optional adapter is licensed under GPL-3.0-or-later. It is built
+separately from the membrane library. NVIDIA AmgX is an external dependency
+and is not vendored here; its own license and notices apply.

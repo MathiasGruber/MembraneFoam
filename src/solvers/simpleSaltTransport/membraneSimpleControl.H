@@ -12,10 +12,11 @@ namespace Foam
 class membraneSimpleControl : public simpleControl
 {
     std::function<scalar()> saltCheck_;
+    label qualified_ = 0;
 protected:
     bool criteriaSatisfied() override
     {
-        if (!simpleControl::criteriaSatisfied()) return false;
+        if (!simpleControl::criteriaSatisfied()) { qualified_ = 0; return false; }
         const scalar limit = dict().getOrDefault<scalar>("maxRelativeSaltImbalance", 0.01);
         if (!(limit > 0 && limit < 1))
             FatalErrorInFunction << "maxRelativeSaltImbalance must be between 0 and 1"
@@ -24,7 +25,16 @@ protected:
         const scalar error = saltCheck_();
         Info<< "MEMBRANE_CONVERGENCE relative_salt_imbalance=" << error
             << " limit=" << limit << nl;
-        return error <= limit;
+
+        if (!(error <= limit)) { qualified_ = 0; return false; }
+        const label required = dict().getOrDefault<label>("validationConsecutiveChecks", 1);
+        if (required < 1 || required > 100000)
+            FatalErrorInFunction << "Invalid validationConsecutiveChecks" << exit(FatalError);
+        ++qualified_;
+        Info<< "MEMBRANE_VALIDATION qualified=" << qualified_
+            << " required=" << required << nl;
+        return qualified_ >= required;
+
     }
 public:
     explicit membraneSimpleControl(fvMesh& mesh) : simpleControl(mesh) {}
